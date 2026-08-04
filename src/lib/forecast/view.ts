@@ -10,6 +10,7 @@ import { type ActivityKey, ACTIVITIES, TODAY_TOP_ACTIVITIES } from "@/config/act
 import { COPY, type ConfidenceTone } from "@/config/copy";
 import {
   GROTTO_CLOSING_DIRS,
+  LOCATION,
   NORTHERLY_SAILOR,
   REFRESH,
   SLOT_DELTA_NOTE,
@@ -96,8 +97,12 @@ export const confidenceView = (slot: Slot, lead: number): ConfidenceView => {
 /* --------------------------------------------------------------- now card */
 
 /** Pick the forecast hour whose Capri wall-clock time is closest to now. */
-export function pickCurrentHour(hours: CompactHour[], now: Date): CompactHour {
-  const wall = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Rome" }));
+export function pickCurrentHour(
+  hours: CompactHour[],
+  now: Date,
+  timezone: string = LOCATION.timezone,
+): CompactHour {
+  const wall = new Date(now.toLocaleString("en-US", { timeZone: timezone }));
   const target = new Date(
     wall.getFullYear(),
     wall.getMonth(),
@@ -134,7 +139,7 @@ export function buildNowView(
   now: Date,
   timezone: string,
 ): NowView {
-  const cur = pickCurrentHour(hours, now);
+  const cur = pickCurrentHour(hours, now, timezone);
   const slot = buildSlot([cur], 0)!;
   const c = COPY.now;
 
@@ -255,7 +260,10 @@ const trend = (day: DayForecast) => {
   return null;
 };
 
-export function buildDayRow(day: DayForecast): DayRowView {
+export function buildDayRow(day: DayForecast): DayRowView | null {
+  // A day with hours but none in the AM/PM windows has no summary to build.
+  // Open-Meteo returns full local days so this is defensive, not expected.
+  if (!day.am && !day.pm) return null;
   const s = day.am ?? day.pm!;
   const L = COPY.sevenDay.numberLabels;
   const pair = (f: (slot: Slot) => string) =>
@@ -289,7 +297,6 @@ export function buildDayRow(day: DayForecast): DayRowView {
       closes: (GROTTO_CLOSING_DIRS as readonly string[]).includes(compass(s.wDir)),
       fromLabel: compass(s.wDir),
       spreadWarn: s.spread > WHY_SPREAD_WARN,
-      spreadKn: s.spread,
       pressureWarn: s.dp < WHY_PRESSURE_WARN,
     }),
   };

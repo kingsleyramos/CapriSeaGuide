@@ -25,6 +25,7 @@ function SlotVerdictChip({ verdict, prefix }: { verdict: VerdictView; prefix: st
 
 function DayRow({ day }: { day: DayForecast }) {
   const row = buildDayRow(day);
+  if (!row) return null;
   const s = COPY.sevenDay;
 
   return (

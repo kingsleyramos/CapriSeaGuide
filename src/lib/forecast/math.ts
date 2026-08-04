@@ -46,12 +46,3 @@ export const compass = (d: number) =>
 
 /** Format a 0–1 probability as a whole-percent string, e.g. "38%". */
 export const pct = (p: number) => `${Math.round(p * 100)}%`;
-
-/** First non-null value, else fallback. */
-export const firstNum = (
-  values: (number | null | undefined)[],
-  fallback: number,
-) => {
-  for (const v of values) if (v != null && Number.isFinite(v)) return v;
-  return fallback;
-};

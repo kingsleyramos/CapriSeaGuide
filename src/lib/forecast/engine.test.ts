@@ -255,9 +255,13 @@ describe("view models", () => {
   });
 
   it("day row explains an NW-swell closure and labels Today/Tomorrow", () => {
-    const rough = buildDayRow(days[1]);
+    const rough = buildDayRow(days[1])!;
     expect(rough.why).toMatch(/closes the Blue Grotto/);
-    expect(buildDayRow(days[0]).label).toMatch(/Today/);
+    expect(buildDayRow(days[0])!.label).toMatch(/Today/);
+  });
+
+  it("buildDayRow returns null when a day has neither AM nor PM slot", () => {
+    expect(buildDayRow({ date: "2026-08-03", lead: 0, am: null, pm: null })).toBeNull();
   });
 
   it("pickCurrentHour finds the hour nearest Capri wall-time", () => {

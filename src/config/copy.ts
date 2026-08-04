@@ -185,20 +185,20 @@ export const COPY = {
     closes,
     fromLabel,
     spreadWarn,
-    spreadKn,
     pressureWarn,
   }: {
     closes: boolean;
     fromLabel: string;
     spreadWarn: boolean;
-    spreadKn: number;
     pressureWarn: boolean;
   }): string {
     const base = closes
       ? `Swell is arriving from the ${fromLabel}, the direction that closes the Blue Grotto.`
       : "Swell direction is away from the grotto's northwest-facing mouth, which helps it stay open.";
+    // Kept qualitative on purpose: the confidence spread is a blended metric
+    // (wind models + ensemble + waves), not a literal wind delta in knots.
     const spread = spreadWarn
-      ? ` The forecast models disagree by ${Math.round(spreadKn)} kt, so treat the wind figure loosely.`
+      ? " The forecast sources disagree here, so treat the wind figure loosely."
       : "";
     const pressure = pressureWarn
       ? " Pressure drops through the day — conditions may worsen faster than shown."

@@ -21,7 +21,7 @@ export function Report() {
   const now = useNow(REFRESH.clockTickMs);
 
   if (status === "loading") return <LoadingReport />;
-  if (status === "error" || !report) {
+  if (status === "error" || !report || !report.hours.length || !report.days.length) {
     return <ErrorReport message={error || COPY.states.genericError} onRetry={retry} />;
   }
 
