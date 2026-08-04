@@ -25,11 +25,13 @@
   --color-surface-muted: #f3f4f6;
   --color-link: #0b6aa9;
 
-  /* Verdict chip fills (white text sits on these) */
+  /* Verdict chip fills (white text sits on these). Good / Uncertain / Likely
+     off were darkened by the designer to meet WCAG AA contrast for white text
+     (all now ≥5:1); Calm and Off already passed. */
   --color-calm: #15803d;
-  --color-good: #4d9a2a;
-  --color-uncertain: #d97706;
-  --color-likely: #ea580c;
+  --color-good: #3d7c28;
+  --color-uncertain: #b45309;
+  --color-likely: #c2410c;
   --color-off: #dc2626;
   --color-none: #9ca3af;
 
