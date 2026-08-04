@@ -72,8 +72,10 @@ export const ACTIVITIES: readonly ActivityDef[] = [
   { key: "fBig", name: "Car ferry, Naples", model: { waveMid: 2.7, waveK: 0.4, windMid: 34, windK: 5, faceBearing: null, floor: 0.01 } },
 ] as const;
 
-/** The three activities shown on the Today (morning/afternoon) cards, in order. */
-export const TODAY_TOP_ACTIVITIES: readonly ActivityKey[] = ["grotto", "tour", "grottos"];
+/** The three activities shown on the Today (morning/afternoon) cards, in order.
+ *  Kept as a literal tuple so its copy labels stay exhaustively typed. */
+export const TODAY_TOP_ACTIVITIES = ["grotto", "tour", "grottos"] as const;
+export type TodayTopKey = (typeof TODAY_TOP_ACTIVITIES)[number];
 
 export const ACTIVITY_BY_KEY: Record<ActivityKey, ActivityDef> = Object.fromEntries(
   ACTIVITIES.map((a) => [a.key, a]),
