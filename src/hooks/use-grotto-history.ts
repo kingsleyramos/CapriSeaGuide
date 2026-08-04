@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { REFRESH } from "@/config/tuning";
-import type { DayForecast } from "@/lib/forecast/types";
+import type { HistoryDay } from "@/lib/forecast/grotto-view";
 
 /** Loads the past-7-day Blue Grotto history and refreshes hourly.
  *  Returns null until the first load resolves. */
-export function useGrottoHistory(): DayForecast[] | null {
-  const [days, setDays] = useState<DayForecast[] | null>(null);
+export function useGrottoHistory(): HistoryDay[] | null {
+  const [days, setDays] = useState<HistoryDay[] | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -16,7 +16,7 @@ export function useGrottoHistory(): DayForecast[] | null {
         const res = await fetch("/api/grotto-history", { cache: "no-store" });
         if (!res.ok) return;
         const json = await res.json();
-        if (active && json && !json.error) setDays(json.days as DayForecast[]);
+        if (active && json && !json.error) setDays(json.days as HistoryDay[]);
       } catch {
         /* keep the previous value */
       }

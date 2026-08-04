@@ -92,6 +92,11 @@ export const COPY = {
     pmLabel: "PM",
     seaHeading: "Sea report (AM / PM)",
     numberLabels: { waves: "Waves", swell: "Swell", from: "From", wind: "Wind" },
+    reportedHeading: "Reported status (AM / PM)",
+    statusWord: { open: "Open", closed: "Closed", mixed: "Mixed", none: "—" },
+    noRecord: "No recorded status yet; logging begins once the recorder is live.",
+    changesHeading: "Changes during the day",
+    transitionWord: { open: "Reopened", closed: "Closed" },
     empty: "History isn't available right now.",
     /** Honest label until the recorder (phase C) logs the boatmen's real call. */
     modelNote: "Modeled from sea conditions, not yet the boatmen's actual daily call.",

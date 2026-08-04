@@ -40,6 +40,32 @@ function HistoryDayRow({ row }: { row: HistoryRow }) {
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="bg-surface-muted px-5 pb-4 pt-2">
+          {/* Recorded reality, shown once the recorder has logged this day. */}
+          {row.reported ? (
+            <div className="mb-3">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-mute">
+                {s.reportedHeading}
+              </div>
+              <div className="text-[13px] font-medium text-ink">
+                {s.amLabel} {row.reported.am} · {s.pmLabel} {row.reported.pm}
+              </div>
+              {row.changes && row.changes.length > 0 ? (
+                <>
+                  <div className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wider text-ink-mute">
+                    {s.changesHeading}
+                  </div>
+                  <ul className="grid gap-1 text-[13px] text-ink-soft">
+                    {row.changes.map((c) => (
+                      <li key={c}>{c}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mb-3 text-[13px] text-ink-mute">{s.noRecord}</div>
+          )}
+
           <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-mute">
             {s.seaHeading}
           </div>

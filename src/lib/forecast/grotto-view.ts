@@ -10,6 +10,7 @@
 
 import { COPY, type GrottoDisplayTone, type GrottoStatus } from "@/config/copy";
 import { GROTTO_HOURS, LOCATION, type PillTone } from "@/config/tuning";
+import type { ActualSlotStatus } from "./grotto-actual";
 import { compass, pct } from "./math";
 import { pillTone } from "./model";
 import type { DayForecast, Slot } from "./types";
@@ -87,6 +88,22 @@ export function buildGrottoView({
 
 /* ------------------------------------------- 7-day history (model hindcast) */
 
+/** A recorded intra-day change, with the sea conditions behind it. */
+export interface HistoryTransition {
+  time: string; // "11:30" Capri-local
+  to: "open" | "closed";
+  wave: number | null; // m
+  wind: number | null; // kt
+  from: string | null; // compass bearing
+}
+export interface HistoryActual {
+  am: ActualSlotStatus;
+  pm: ActualSlotStatus;
+  transitions: HistoryTransition[];
+}
+/** A history day = the model day plus the recorded status (null until logged). */
+export type HistoryDay = DayForecast & { actual: HistoryActual | null };
+
 export interface HistoryCell {
   pctText: string;
   tone: PillTone | "none";
@@ -101,6 +118,10 @@ export interface HistoryRow {
   am: HistoryCell;
   pm: HistoryCell;
   numbers: HistoryNumber[];
+  /** Recorded AM/PM status text, null when nothing was logged for the day. */
+  reported: { am: string; pm: string } | null;
+  /** Recorded intra-day changes, pre-formatted (e.g. "Closed ~11:30 · waves 1.2 m NW, 22 kt"). */
+  changes: string[] | null;
 }
 
 const historyCell = (slot: Slot | null): HistoryCell =>
@@ -117,11 +138,15 @@ const historyLabel = (date: string) =>
 
 /** Turn past DayForecasts into history rows: the modeled grotto odds per
  *  AM/PM slot, plus the sea report behind them. */
-export function buildGrottoHistory(days: DayForecast[]): HistoryRow[] {
-  const L = COPY.grottoHistory.numberLabels;
+export function buildGrottoHistory(days: HistoryDay[]): HistoryRow[] {
+  const C = COPY.grottoHistory;
+  const L = C.numberLabels;
+  const statusText = (s: ActualSlotStatus) => (s ? C.statusWord[s] : C.statusWord.none);
+
   return days.map((day) => {
     const pair = (f: (s: Slot) => string) =>
       `${day.am ? f(day.am) : "—"} / ${day.pm ? f(day.pm) : "—"}`;
+    const actual = day.actual;
     return {
       date: day.date,
       label: historyLabel(day.date),
@@ -133,6 +158,16 @@ export function buildGrottoHistory(days: DayForecast[]): HistoryRow[] {
         { label: L.from, value: pair((x) => compass(x.wDir)) },
         { label: L.wind, value: pair((x) => `${Math.round(x.wind)} kt ${compass(x.dir)}`) },
       ],
+      reported: actual ? { am: statusText(actual.am), pm: statusText(actual.pm) } : null,
+      changes: actual
+        ? actual.transitions.map((tr) => {
+            const sea =
+              tr.wave != null && tr.wind != null && tr.from
+                ? ` · waves ${tr.wave} m ${tr.from}, ${tr.wind} kt`
+                : "";
+            return `${C.transitionWord[tr.to]} ~${tr.time}${sea}`;
+          })
+        : null,
     };
   });
 }

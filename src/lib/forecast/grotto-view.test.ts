@@ -80,13 +80,30 @@ describe("buildGrottoHistory", () => {
     );
 
   it("builds a labeled row per day with AM/PM cells and a sea report", () => {
-    const days = buildDays(buildHours(rawFor(["2026-08-01", "2026-08-02"])), 2);
-    const rows = buildGrottoHistory(days);
+    const model = buildDays(buildHours(rawFor(["2026-08-01", "2026-08-02"])), 2);
+    const rows = buildGrottoHistory(model.map((d) => ({ ...d, actual: null })));
     expect(rows).toHaveLength(2);
     expect(rows[0].label).toMatch(/Aug/);
     expect(rows[0].am.pctText).toMatch(/%/);
     expect(rows[0].pm.pctText).toMatch(/%/);
+    expect(rows[0].reported).toBeNull();
     expect(rows[0].numbers.map((n) => n.label)).toEqual(["Waves", "Swell", "From", "Wind"]);
     expect(rows[0].numbers[0].value).toContain("/");
+  });
+
+  it("surfaces recorded status and intra-day changes when present", () => {
+    const model = buildDays(buildHours(rawFor(["2026-08-01"])), 1);
+    const rows = buildGrottoHistory(
+      model.map((d) => ({
+        ...d,
+        actual: {
+          am: "mixed" as const,
+          pm: "open" as const,
+          transitions: [{ time: "11:30", to: "closed" as const, wave: 1.2, wind: 22, from: "NW" }],
+        },
+      })),
+    );
+    expect(rows[0].reported).toEqual({ am: "Mixed", pm: "Open" });
+    expect(rows[0].changes).toEqual(["Closed ~11:30 · waves 1.2 m NW, 22 kt"]);
   });
 });
