@@ -2,8 +2,8 @@
  * ALL user-facing wording for the report, in one file.
  *
  * The forecast is generated from numbers by fixed rules, so the *wording*
- * changes as conditions do. Those conditional sentences — and the thresholds
- * that select between them — live here, not in the engine. Edit copy freely;
+ * changes as conditions do. Those conditional sentences, and the thresholds
+ * that select between them, live here, not in the engine. Edit copy freely;
  * you can also re-tune where the wording flips (e.g. when the grotto line goes
  * from "borderline" to "shut") without touching logic.
  *
@@ -125,7 +125,7 @@ export const COPY = {
 
   /**
    * The plain-language sea summary ("sailor line"). This is the single set of
-   * rules the methodology section describes — keep the two in sync if you edit
+   * rules the methodology section describes. Keep the two in sync if you edit
    * the thresholds.
    */
   sailorLine({

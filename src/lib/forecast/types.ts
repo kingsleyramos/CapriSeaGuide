@@ -8,16 +8,16 @@ import type { ActivityKey } from "@/config/activities";
 export interface RawHour {
   /** Local ISO time, e.g. "2026-08-03T09:00". */
   t: string;
-  // Atmospheric — consensus
+  // Atmospheric: consensus
   wind: number; // kn
   dir: number; // deg, coming-from
   gust: number; // kn
   press: number; // hPa
   rain: number; // mm
-  // Atmospheric — disagreement
+  // Atmospheric: disagreement
   windModelStd: number; // kn, across deterministic models
   windEnsembleStd: number; // kn, across ensemble members
-  // Marine — consensus
+  // Marine: consensus
   wave: number; // m
   swell: number; // m
   per: number; // s (swell period)
@@ -82,7 +82,7 @@ export interface CompactHour {
   probs: Record<ActivityKey, number>;
 }
 
-/** The subset of hour fields a slot average reads — satisfied by both
+/** The subset of hour fields a slot average reads, satisfied by both
  *  HourPoint (engine) and CompactHour (client). */
 export type SlotSourceHour = Pick<
   HourPoint,
@@ -107,7 +107,7 @@ export interface SourceMeta {
   waveModels: string[];
 }
 
-/** The full numeric forecast returned by /api/forecast. No display strings —
+/** The full numeric forecast returned by /api/forecast. No display strings;
  *  the client derives those with the view layer so wording stays live. */
 export interface ForecastReport {
   fetchedAt: number; // epoch ms, server clock

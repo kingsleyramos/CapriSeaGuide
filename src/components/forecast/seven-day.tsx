@@ -16,7 +16,7 @@ const GRID = "grid grid-cols-[minmax(140px,1fr)_64px_64px] items-center gap-2";
 function SlotVerdictChip({ verdict, prefix }: { verdict: VerdictView; prefix: string }) {
   return (
     <VerdictChip tone={verdict.tone} className="px-2.5 py-1.5 text-xs">
-      {/* margin, not a trailing space — flex layout would collapse the space */}
+      {/* margin, not a trailing space, since flex layout would collapse it */}
       <span className="mr-1 font-semibold opacity-75">{prefix}</span>
       {verdict.label}
     </VerdictChip>

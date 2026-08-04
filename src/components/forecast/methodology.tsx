@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 
 const M = COPY.methodology;
 
-/** "How this page works" — rendered from the centralized copy. */
+/** The "How this page works" panel, rendered from the centralized copy. */
 export function Methodology({ updatedLine }: { updatedLine: string }) {
   return (
     <Card className="p-5">

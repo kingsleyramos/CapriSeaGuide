@@ -35,7 +35,7 @@
   --color-off: #dc2626;
   --color-none: #9ca3af;
 
-  /* "Chance it's off" pills — foreground + background pairs */
+  /* "Chance it's off" pills: foreground + background pairs */
   --color-pill-low-fg: #15803d;
   --color-pill-low-bg: #dcfce7;
   --color-pill-mid-fg: #b45309;

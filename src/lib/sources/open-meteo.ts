@@ -92,7 +92,7 @@ function ensembleValues(h: Hourly, base: string, i: number): number[] {
   return out;
 }
 
-/** Circular mean of bearings (deg) — correct across the 0/360 wrap. */
+/** Circular mean of bearings (deg), correct across the 0/360 wrap. */
 function circularMean(degs: number[]): number {
   if (!degs.length) return 0;
   let s = 0;

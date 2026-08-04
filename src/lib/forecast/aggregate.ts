@@ -19,7 +19,7 @@ function blendSpread(h: RawHour): number {
     SPREAD.windEnsembleStdWeight * (h.windEnsembleStd || 0) +
     SPREAD.waveModelStdToKn * (h.waveModelStd || 0);
   // parts === 0 means no source produced a spread this hour (a single model, or
-  // a degraded/missing feed) — i.e. no disagreement *signal*, not perfect
+  // a degraded/missing feed), i.e. no disagreement *signal*, not perfect
   // agreement, which real 51-member ensemble data never yields. Fall back
   // rather than report false certainty.
   if (!Number.isFinite(parts) || parts <= 0) return SPREAD.fallback;

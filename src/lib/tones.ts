@@ -1,6 +1,6 @@
 /**
  * Maps the engine's semantic tones to design-system utility classes. This is
- * the boundary where "how likely" becomes "what colour" — the only place that
+ * the boundary where "how likely" becomes "what colour", the only place that
  * decision lives, so re-theming is a token edit (globals.css) away.
  */
 

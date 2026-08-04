@@ -12,7 +12,7 @@ export async function GET() {
     if (!raw.length) throw new Error("The forecast service returned no data.");
     // fetchedAt is this response's generation time. The upstream Open-Meteo
     // fetches have their own hourly Data Cache, so the served data can be
-    // slightly older than this stamp — "Updated …" means "assembled at", not
+    // slightly older than this stamp: "Updated …" means "assembled at", not
     // "sensor time". The two caches share a 1h window and stay ~in lockstep.
     const report = buildReport(raw, meta, Date.now(), LOCATION.timezone);
     return NextResponse.json(report, {

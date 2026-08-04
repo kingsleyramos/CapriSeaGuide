@@ -39,7 +39,7 @@ export function useForecast() {
       lastLoad.current = Date.now();
       setState({ status: "ready", report: json as ForecastReport, error: "" });
     } catch (error) {
-      if (id !== reqId.current) return; // stale failure — ignore
+      if (id !== reqId.current) return; // stale failure, ignore
       const message = error instanceof Error ? error.message : COPY.states.genericError;
       // Keep the last good report on a refresh failure; only fail cold starts.
       setState((prev) =>

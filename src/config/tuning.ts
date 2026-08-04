@@ -63,7 +63,7 @@ export const DIRECTION = {
   floor: 0.22,
 } as const;
 
-/** Blue Grotto — bespoke physics (barely-a-metre-high mouth, faces NW). */
+/** Blue Grotto: bespoke physics (barely-a-metre-high mouth, faces NW). */
 export const GROTTO = {
   faceBearing: 322,
   period: { clampMin: 3, clampMax: 14, ref: 6, exp: 0.35 },
@@ -119,7 +119,7 @@ export const NOW_TINT_BANDS: { max: number; tone: NowTone }[] = [
 /**
  * Confidence model. Starts high and is docked for: lead time, source
  * disagreement (`spread`), fast-changing pressure, and sitting near a verdict
- * threshold. It describes the forecast's certainty — never how open something is.
+ * threshold. It describes the forecast's certainty, never how open something is.
  */
 export const CONFIDENCE = {
   base: 0.94,

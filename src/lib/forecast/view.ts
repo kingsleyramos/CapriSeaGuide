@@ -2,7 +2,7 @@
  * View layer: turns the numeric forecast into display-ready view-models using
  * the centralized copy. This is the ONLY place model numbers become sentences,
  * and it runs at render time so time-relative wording ("3 min ago", "Today")
- * stays live. Colors never cross this boundary — components map the semantic
+ * stays live. Colors never cross this boundary. Components map the semantic
  * `tone` values to design-system classes.
  */
 
@@ -125,7 +125,7 @@ export interface NowView {
   headline: string;
   pattern: string;
   stats: StatView[];
-  /** "Updated 09:20 Capri time (5 min ago)" — without the "Updated" prefix. */
+  /** "Updated 09:20 Capri time (5 min ago)". Excludes the "Updated" prefix. */
   updatedLine: string;
   /** "Sunday, 3 August · 09:20 in Capri" */
   capriNowLine: string;

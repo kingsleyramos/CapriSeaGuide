@@ -8,7 +8,7 @@
  *
  * capri.net exposes a reliable text banner and is the primary. bluegrotto.tours
  * shows a JS/image traffic-light with no server-readable state word, so it is a
- * best-effort secondary that usually returns "unknown" — harmless, and it will
+ * best-effort secondary that usually returns "unknown". That is harmless, and it will
  * start contributing automatically if that ever becomes parseable.
  */
 
@@ -55,7 +55,7 @@ export function parseCapriNet(html: string): Status {
  * rendered with no reliable server-readable state, so we are deliberately
  * conservative: only a *status-scoped* image (its src/alt names a light /
  * status / open-closed context) is trusted for its colour. A stray green or
- * red asset elsewhere on the page must not manufacture a status — otherwise it
+ * red asset elsewhere on the page must not manufacture a status, otherwise it
  * could override the primary or fake a "sources disagree".
  */
 export function parseBlueGrotto(html: string): Status {

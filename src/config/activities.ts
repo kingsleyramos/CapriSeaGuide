@@ -6,14 +6,14 @@
  * blend of wave height and wind (a logistic curve for each). Some are
  * direction-sensitive: `faceBearing` is the compass bearing (degrees, in the
  * meteorological "coming from" convention) that the activity is most exposed
- * to — a swell arriving from that bearing hits hardest. `null` means the
+ * to. A swell arriving from that bearing hits hardest. `null` means the
  * activity is effectively omnidirectional.
  *
  * The Blue Grotto has bespoke physics (its mouth is barely a metre high and it
  * faces NW), so its tuning lives in `GROTTO` in ./tuning and it is not given a
  * `model` block here.
  *
- * These numbers are the designer's calibration. Change them here — nothing in
+ * These numbers are the designer's calibration. Change them here. Nothing in
  * the engine hard-codes an activity threshold.
  */
 
@@ -41,7 +41,7 @@ export interface ActivityModel {
   windK: number;
   /** Exposure bearing (deg, "coming from") for direction sensitivity, or null. */
   faceBearing: number | null;
-  /** Minimum probability floor — nothing is ever 0% off. */
+  /** Minimum probability floor. Nothing is ever 0% off. */
   floor: number;
 }
 
