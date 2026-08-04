@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildGrottoView, grottoCloseHour, isWithinGrottoHours } from "./grotto-view";
+import { buildDays, buildHours } from "./aggregate";
+import {
+  buildGrottoHistory,
+  buildGrottoView,
+  grottoCloseHour,
+  isWithinGrottoHours,
+} from "./grotto-view";
+import type { RawHour } from "./types";
 
 const TZ = "Europe/Rome";
 const at = (iso: string) => new Date(iso);
@@ -49,5 +56,37 @@ describe("buildGrottoView state model", () => {
   it("surfaces a disagreement note when sources conflict", () => {
     const v = buildGrottoView({ ...base, conflict: true, verdict: "open", now: at("2026-08-04T10:00:00Z") });
     expect(v.line).toMatch(/disagree/);
+  });
+});
+
+describe("buildGrottoHistory", () => {
+  const rawFor = (dates: string[]): RawHour[] =>
+    dates.flatMap((date) =>
+      Array.from({ length: 24 }, (_, h) => ({
+        t: `${date}T${String(h).padStart(2, "0")}:00`,
+        wind: 10,
+        dir: 200,
+        gust: 15,
+        press: 1015,
+        rain: 0,
+        windModelStd: 1,
+        windEnsembleStd: 1,
+        wave: 0.5,
+        swell: 0.4,
+        per: 6,
+        wDir: 300,
+        waveModelStd: 0.05,
+      })),
+    );
+
+  it("builds a labeled row per day with AM/PM cells and a sea report", () => {
+    const days = buildDays(buildHours(rawFor(["2026-08-01", "2026-08-02"])), 2);
+    const rows = buildGrottoHistory(days);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].label).toMatch(/Aug/);
+    expect(rows[0].am.pctText).toMatch(/%/);
+    expect(rows[0].pm.pctText).toMatch(/%/);
+    expect(rows[0].numbers.map((n) => n.label)).toEqual(["Waves", "Swell", "From", "Wind"]);
+    expect(rows[0].numbers[0].value).toContain("/");
   });
 });

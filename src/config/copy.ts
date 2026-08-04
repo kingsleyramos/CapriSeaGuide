@@ -90,7 +90,7 @@ export const COPY = {
     subtitle: "Modeled from past sea conditions during opening hours.",
     amLabel: "AM",
     pmLabel: "PM",
-    chanceHeading: "Modeled chance the grotto was closed",
+    seaHeading: "Sea report (AM / PM)",
     numberLabels: { waves: "Waves", swell: "Swell", from: "From", wind: "Wind" },
     empty: "History isn't available right now.",
     /** Honest label until the recorder (phase C) logs the boatmen's real call. */

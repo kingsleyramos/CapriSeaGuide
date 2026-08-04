@@ -9,8 +9,10 @@
  */
 
 import { COPY, type GrottoDisplayTone, type GrottoStatus } from "@/config/copy";
-import { GROTTO_HOURS, LOCATION } from "@/config/tuning";
-import { pct } from "./math";
+import { GROTTO_HOURS, LOCATION, type PillTone } from "@/config/tuning";
+import { compass, pct } from "./math";
+import { pillTone } from "./model";
+import type { DayForecast, Slot } from "./types";
 
 export interface GrottoView {
   label: string;
@@ -81,4 +83,56 @@ export function buildGrottoView({
     tone: "unknown",
     line: c.fallback(pct(forecastGrottoProb)),
   };
+}
+
+/* ------------------------------------------- 7-day history (model hindcast) */
+
+export interface HistoryCell {
+  pctText: string;
+  tone: PillTone | "none";
+}
+export interface HistoryNumber {
+  label: string;
+  value: string;
+}
+export interface HistoryRow {
+  date: string;
+  label: string;
+  am: HistoryCell;
+  pm: HistoryCell;
+  numbers: HistoryNumber[];
+}
+
+const historyCell = (slot: Slot | null): HistoryCell =>
+  slot
+    ? { pctText: pct(slot.p.grotto), tone: pillTone(slot.p.grotto) }
+    : { pctText: "—", tone: "none" };
+
+const historyLabel = (date: string) =>
+  new Date(`${date}T12:00:00`).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+
+/** Turn past DayForecasts into history rows: the modeled grotto odds per
+ *  AM/PM slot, plus the sea report behind them. */
+export function buildGrottoHistory(days: DayForecast[]): HistoryRow[] {
+  const L = COPY.grottoHistory.numberLabels;
+  return days.map((day) => {
+    const pair = (f: (s: Slot) => string) =>
+      `${day.am ? f(day.am) : "—"} / ${day.pm ? f(day.pm) : "—"}`;
+    return {
+      date: day.date,
+      label: historyLabel(day.date),
+      am: historyCell(day.am),
+      pm: historyCell(day.pm),
+      numbers: [
+        { label: L.waves, value: pair((x) => `${x.wave.toFixed(1)} m`) },
+        { label: L.swell, value: pair((x) => `${x.swell.toFixed(1)} m`) },
+        { label: L.from, value: pair((x) => compass(x.wDir)) },
+        { label: L.wind, value: pair((x) => `${Math.round(x.wind)} kt ${compass(x.dir)}`) },
+      ],
+    };
+  });
 }
