@@ -126,3 +126,10 @@ export interface GrottoLive {
   conflict: boolean;
   checkedAt: number;
 }
+
+/** One recorded live-status reading (the recorder appends these every poll). */
+export interface GrottoReading {
+  /** Epoch ms of the reading. */
+  t: number;
+  status: "open" | "closed" | "unknown";
+}

@@ -1,8 +1,8 @@
-# Capri Sea Tours — Reliability Forecast
+# Capri Sea Tours: Reliability Forecast
 
 An hourly, 7-day marine **reliability** forecast for Capri: the odds that each
-sea activity — Blue Grotto entry, island boat tours, the Amalfi/Naples ferries,
-kayak, swims — gets **closed or cancelled** by sea conditions, plus the live
+sea activity (Blue Grotto entry, island boat tours, the Amalfi/Naples ferries,
+kayak, swims) gets **closed or cancelled** by sea conditions, plus the live
 open/closed status of the Blue Grotto.
 
 Built with Next.js (App Router), TypeScript and Tailwind v4. The forecast model
@@ -19,7 +19,7 @@ npm run build    # production build
 npm run lint
 ```
 
-No environment variables or API keys are required — all upstream sources are
+No environment variables or API keys are required; all upstream sources are
 public.
 
 ## How it works
@@ -38,7 +38,7 @@ the browser never depends on public CORS proxies (the original prototype did).
 Responses are cached (`revalidate`) to match the page's refresh cadence.
 
 The client fetches `/api/forecast` and `/api/grotto`, then re-derives all display
-text at render time from a live clock — so "3 min ago", the current hour, and
+text at render time from a live clock, so "3 min ago", the current hour, and
 the verdict wording stay current without re-fetching. It also refreshes hourly
 and when a backgrounded tab is refocused after going stale.
 
@@ -47,19 +47,19 @@ and when a backgrounded tab is refocused after going stale.
 The prototype judged forecast confidence from just ECMWF vs GFS. This build
 widens that:
 
-- **Wind / gusts / pressure** — six deterministic models (ECMWF, GFS, ICON,
+- **Wind / gusts / pressure**: six deterministic models (ECMWF, GFS, ICON,
   GEM, Météo-France, UKMO) **plus ECMWF's 51-member ensemble**.
-- **Waves** — four wave models (ECMWF WAM, GWAM, Météo-France, NCEP WaveWatch).
+- **Waves**: four wave models (ECMWF WAM, GWAM, Météo-France, NCEP WaveWatch).
 
 Per hour we take the multi-model consensus as the central estimate and measure
 **disagreement** (cross-model std, ensemble std, wave-model std). That
-disagreement — not a two-model difference — drives the confidence line. See
+disagreement, not a two-model difference, drives the confidence line. See
 `SPREAD` and `CONFIDENCE` in [`src/config/tuning.ts`](src/config/tuning.ts).
 
 ### A fix worth knowing about
 
 The prototype's direction function (`cosFace`) was **inverted**: it made SE
-swell close the NW-facing Blue Grotto and treated N/NW swell as harmless — the
+swell close the NW-facing Blue Grotto and treated N/NW swell as harmless, the
 opposite of its own copy and of Open-Meteo's documented "coming from" direction
 convention. This build corrects it (NW swell closes the grotto). The original
 behavior is preserved behind `DIRECTION.legacyInverted` in
@@ -67,7 +67,7 @@ behavior is preserved behind `DIRECTION.legacyInverted` in
 
 ## Changing the copy or the thresholds
 
-All wording and all tuning live in [`src/config/`](src/config) — the engine
+All wording and all tuning live in [`src/config/`](src/config): the engine
 hard-codes nothing:
 
 | File | What lives there |
@@ -104,11 +104,29 @@ fix, aggregation, and the view models).
 
 ## Deployment
 
-Needs a Node/serverless host (the route handlers do the fetching and caching) —
+Needs a Node/serverless host (the route handlers do the fetching and caching),
 e.g. Vercel. `npm run build` && `npm start`, or deploy the repo directly.
+
+## Blue Grotto history recorder (optional)
+
+The "last 7 days" history renders a model hindcast out of the box, with no
+storage. To also record the boatmen's *actual* daily calls (open/closed, plus
+intra-day changes with times), enable the recorder. It is forward-only: history
+accrues from the day you switch it on.
+
+1. **Store.** In Vercel: Storage, Create Database, Upstash Redis. Vercel injects
+   `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Nothing else to configure, and
+   without them the recorder is inert (the app runs exactly as before).
+2. **Secret.** Set `POLL_SECRET` (any random string) as a Vercel env var, and
+   add the same value plus `POLL_URL` (`https://<domain>/api/poll-grotto`) as
+   GitHub repository secrets.
+3. **Scheduler.** [`.github/workflows/poll-grotto.yml`](.github/workflows/poll-grotto.yml)
+   polls every 30 min during opening hours. The endpoint self-gates to opening
+   hours and stores only `{ time, status }`; sea conditions are reconstructed
+   from Open-Meteo. Retention is 30 days (`RETENTION_DAYS`).
 
 ## Data & disclaimer
 
 Forecast data © [Open-Meteo](https://open-meteo.com) (CC-BY 4.0). Live grotto
 status is read from capri.net and bluegrotto.tours. Guidance only, not a
-navigational forecast — the boatmen and the port authority have the final word.
+navigational forecast; the boatmen and the port authority have the final word.

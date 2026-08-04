@@ -1,0 +1,35 @@
+# Records a live Blue Grotto reading every 30 min during (roughly) opening
+# hours. Kept deliberately lean: no checkout, no dependencies, one curl per run,
+# and the cron is limited to the UTC window that can overlap Capri opening hours
+# (09:00-17:30 CEST / 09:00-14:00 CET). The endpoint itself no-ops outside the
+# exact opening hours, so edge runs are cheap.
+#
+# Setup: add two repository secrets
+#   POLL_URL     https://<your-domain>/api/poll-grotto
+#   POLL_SECRET  the same value set as POLL_SECRET in the Vercel project
+# GitHub may delay scheduled runs a few minutes (fine here) and disables
+# schedules after 60 days of no repo activity; re-enable from the Actions tab.
+name: poll-grotto
+
+on:
+  schedule:
+    - cron: "*/30 7-15 * * *"
+  workflow_dispatch: {}
+
+# Don't pile up runs if one is slow.
+concurrency:
+  group: poll-grotto
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Record grotto status
+        run: |
+          curl -fsS --retry 2 --max-time 30 -X POST "$POLL_URL" \
+            -H "Authorization: Bearer $POLL_SECRET"
+        env:
+          POLL_URL: ${{ secrets.POLL_URL }}
+          POLL_SECRET: ${{ secrets.POLL_SECRET }}

@@ -92,6 +92,10 @@ export const GROTTO_HOURS = {
 /** How many past days the Blue Grotto history shows. */
 export const HISTORY_DAYS = 7;
 
+/** How many past days of recorded live status the recorder keeps. We store 30
+ *  but show HISTORY_DAYS; bump HISTORY_DAYS later to surface the rest. */
+export const RETENTION_DAYS = 30;
+
 /** Gust term added to every standard activity's closure probability. */
 export const GUST = { midOffset: 8, kOffset: 1, weight: 0.6 } as const;
 
