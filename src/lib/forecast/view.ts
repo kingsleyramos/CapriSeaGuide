@@ -56,13 +56,11 @@ export interface OddsView {
 
 /* ------------------------------------------------------------------ helpers */
 
-const TZ = (timezone: string) => timezone;
-
 const fmtTime = (d: Date, timezone: string) =>
   d.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: TZ(timezone),
+    timeZone: timezone,
   });
 
 const northerly = (wDir: number) =>
@@ -154,7 +152,7 @@ export function buildNowView(
       weekday: "long",
       day: "numeric",
       month: "long",
-      timeZone: TZ(timezone),
+      timeZone: timezone,
     }) +
     ` · ${fmtTime(now, timezone)} ${c.inCapriSuffix}`;
 

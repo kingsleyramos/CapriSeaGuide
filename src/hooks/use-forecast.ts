@@ -25,17 +25,21 @@ export function useForecast() {
     error: "",
   });
   const lastLoad = useRef(0);
+  const reqId = useRef(0);
 
   const load = useCallback(async () => {
+    const id = ++reqId.current;
     try {
       const res = await fetch("/api/forecast", { cache: "no-store" });
       const json = await res.json();
+      if (id !== reqId.current) return; // a newer load has superseded this one
       if (!res.ok || json?.error) {
         throw new Error(json?.error || COPY.states.genericError);
       }
       lastLoad.current = Date.now();
       setState({ status: "ready", report: json as ForecastReport, error: "" });
     } catch (error) {
+      if (id !== reqId.current) return; // stale failure — ignore
       const message = error instanceof Error ? error.message : COPY.states.genericError;
       // Keep the last good report on a refresh failure; only fail cold starts.
       setState((prev) =>

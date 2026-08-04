@@ -30,7 +30,7 @@ function DayRow({ day }: { day: DayForecast }) {
 
   return (
     <Collapsible className="border-b border-line-soft last:border-b-0">
-      <CollapsibleTrigger className="group flex w-full cursor-pointer flex-wrap items-center justify-between gap-3.5 px-5 py-3.5 text-left hover:bg-surface-soft">
+      <CollapsibleTrigger className="group flex w-full cursor-pointer flex-wrap items-center justify-between gap-3.5 px-5 py-3.5 text-left hover:bg-surface-soft focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink">
         <span className="min-w-60 flex-1 basis-64">
           <span className="mb-0.5 flex flex-wrap items-center gap-2">
             <span className="text-[15px] font-bold text-ink">{row.label}</span>
