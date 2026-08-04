@@ -36,7 +36,7 @@ async function fetchJson(url: string): Promise<OpenMeteoResponse> {
     });
     if (!res.ok) {
       throw new Error(
-        `The forecast service returned an error (${res.status}). It may be briefly down — try again in a minute.`,
+        `The forecast service returned an error (${res.status}). It may be briefly down. Try again in a minute.`,
       );
     }
     const json = (await res.json()) as OpenMeteoResponse;

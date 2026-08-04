@@ -28,7 +28,7 @@ export const SUMMARY_THRESHOLDS = {
 
 export const COPY = {
   meta: {
-    title: "Capri Sea Tours — Reliability Forecast",
+    title: "Capri Sea Tours: Reliability Forecast",
     description:
       "Will Capri's boat tours, the Blue Grotto and the ferries run today? An hourly, 7-day marine reliability forecast built from a multi-model weather ensemble.",
   },
@@ -74,7 +74,7 @@ export const COPY = {
       unknown: "The live report couldn't be read right now.",
     } satisfies Record<GrottoStatus, string>,
     /** Shown when we cross-checked more than one source and they disagree. */
-    disagreement: "Live sources disagree — treat as provisional.",
+    disagreement: "Live sources disagree, so treat this as provisional.",
     sourcePrefix: "per",
   },
 
@@ -201,7 +201,7 @@ export const COPY = {
       ? " The forecast sources disagree here, so treat the wind figure loosely."
       : "";
     const pressure = pressureWarn
-      ? " Pressure drops through the day — conditions may worsen faster than shown."
+      ? " Pressure drops through the day, so conditions may worsen faster than shown."
       : "";
     return base + spread + pressure;
   },
@@ -216,7 +216,7 @@ export const COPY = {
       {
         lead: "The data.",
         body:
-          "Waves, swell height, period and direction come from Open-Meteo's marine models — ECMWF WAM, GWAM, Météo-France and NCEP WaveWatch — blended together. Wind, gusts and pressure come from six forecast models (ECMWF, GFS, ICON, GEM, Météo-France and UKMO) plus ECMWF's 51-member ensemble. All of it is hourly, 7 days out. Morning = the 9am–1pm hours averaged, afternoon = 1pm–6pm. The page re-fetches every hour on its own.",
+          "Waves, swell height, period and direction come from Open-Meteo's marine models (ECMWF WAM, GWAM, Météo-France and NCEP WaveWatch), blended together. Wind, gusts and pressure come from six forecast models (ECMWF, GFS, ICON, GEM, Météo-France and UKMO) plus ECMWF's 51-member ensemble. All of it is hourly, 7 days out. Morning = the 9am–1pm hours averaged, afternoon = 1pm–6pm. The page re-fetches every hour on its own.",
       },
       {
         lead: "The percentages.",
