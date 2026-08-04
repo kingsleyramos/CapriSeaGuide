@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
-import type { GrottoStatus } from "@/config/copy";
+import type { GrottoDisplayTone } from "@/config/copy";
 import type { PillTone } from "@/config/tuning";
 import type { DisplayTone } from "@/lib/forecast/view";
 import { confDotClass, grottoChipClass, pillClass, verdictChipClass } from "@/lib/tones";
@@ -21,15 +21,15 @@ export function VerdictChip({
   return <span className={cn(chipBase, verdictChipClass[tone], className)}>{children}</span>;
 }
 
-/** Live Blue Grotto status chip (Open now / Closed now / Unknown). */
+/** Live Blue Grotto status chip (Open now / Closed now / Closed / Unknown). */
 export function GrottoChip({
-  status,
+  tone,
   children,
 }: {
-  status: GrottoStatus;
+  tone: GrottoDisplayTone;
   children: ReactNode;
 }) {
-  return <span className={cn(chipBase, grottoChipClass[status])}>{children}</span>;
+  return <span className={cn(chipBase, grottoChipClass[tone])}>{children}</span>;
 }
 
 /** "Chance it's off" percentage pill. */

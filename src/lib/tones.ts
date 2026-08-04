@@ -4,7 +4,7 @@
  * decision lives, so re-theming is a token edit (globals.css) away.
  */
 
-import type { ConfidenceTone, GrottoStatus } from "@/config/copy";
+import type { ConfidenceTone, GrottoDisplayTone } from "@/config/copy";
 import type { NowTone, PillTone } from "@/config/tuning";
 import type { DisplayTone } from "@/lib/forecast/view";
 
@@ -38,8 +38,9 @@ export const nowTintClass: Record<NowTone, string> = {
   off: "bg-tint-off",
 };
 
-export const grottoChipClass: Record<GrottoStatus, string> = {
+export const grottoChipClass: Record<GrottoDisplayTone, string> = {
   open: "bg-grotto-open",
   closed: "bg-grotto-closed",
+  offHours: "bg-grotto-offhours",
   unknown: "bg-grotto-unknown",
 };

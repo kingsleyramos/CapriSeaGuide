@@ -15,6 +15,8 @@ import type { VerdictTone } from "./tuning";
 
 export type ConfidenceTone = "high" | "medium" | "low";
 export type GrottoStatus = "open" | "closed" | "unknown";
+/** Live grotto chip states: capri.net's verdict plus an "outside opening hours" state. */
+export type GrottoDisplayTone = "open" | "closed" | "offHours" | "unknown";
 export type SlotTrend = "worse" | "better" | null;
 export type PatternBand = "fallingFast" | "easing" | "building" | "steady";
 
@@ -66,16 +68,33 @@ export const COPY = {
     statusLabel: {
       open: "Open now",
       closed: "Closed now",
+      offHours: "Closed",
       unknown: "Unknown",
-    } satisfies Record<GrottoStatus, string>,
-    statusLine: {
-      open: "Weather can still close it during the day.",
-      closed: "It can reopen the same day.",
+    } satisfies Record<GrottoDisplayTone, string>,
+    line: {
+      open: "The grotto can be visited today, weather permitting. The boatmen make the final call at the cave.",
+      weatherClosed: "Reported closed by sea conditions today. It can reopen the same day.",
+      offHoursBeforeOpen: "Outside opening hours. Opens around 9am.",
+      offHoursAfterClose: "Closed for the day. Opens again tomorrow around 9am.",
       unknown: "The live report couldn't be read right now.",
-    } satisfies Record<GrottoStatus, string>,
+    },
+    /** Shown when the live report is unreadable during opening hours. */
+    fallback: (odds: string) =>
+      `Live status unavailable. Our forecast puts it around ${odds} likely closed right now.`,
     /** Shown when we cross-checked more than one source and they disagree. */
     disagreement: "Live sources disagree, so treat this as provisional.",
-    sourcePrefix: "per",
+  },
+
+  grottoHistory: {
+    title: "Blue Grotto, last 7 days",
+    subtitle: "Modeled from past sea conditions during opening hours.",
+    amLabel: "AM",
+    pmLabel: "PM",
+    chanceHeading: "Modeled chance the grotto was closed",
+    numberLabels: { waves: "Waves", swell: "Swell", from: "From", wind: "Wind" },
+    empty: "History isn't available right now.",
+    /** Honest label until the recorder (phase C) logs the boatmen's real call. */
+    modelNote: "Modeled from sea conditions, not yet the boatmen's actual daily call.",
   },
 
   today: {

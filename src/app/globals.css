@@ -59,6 +59,8 @@
   --color-grotto-open: #15803d;
   --color-grotto-closed: #dc2626;
   --color-grotto-unknown: #9ca3af;
+  /* Outside opening hours: neutral, non-alarming (white text passes AA). */
+  --color-grotto-offhours: #4b5563;
 
   /* Error state */
   --color-danger-line: #fecaca;

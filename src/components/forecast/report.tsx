@@ -2,6 +2,7 @@
 
 import { COPY } from "@/config/copy";
 import { REFRESH } from "@/config/tuning";
+import { buildGrottoView } from "@/lib/forecast/grotto-view";
 import { buildNowView, buildTodayCards } from "@/lib/forecast/view";
 import { useForecast } from "@/hooks/use-forecast";
 import { useGrotto } from "@/hooks/use-grotto";
@@ -27,11 +28,18 @@ export function Report() {
 
   const nowView = buildNowView(report.hours, report.fetchedAt, now, report.timezone);
   const todayCards = buildTodayCards(report.days[0]);
+  const grottoView = buildGrottoView({
+    verdict: live?.status ?? "unknown",
+    conflict: !!live?.conflict,
+    now,
+    timezone: report.timezone,
+    forecastGrottoProb: nowView.grottoProbNow,
+  });
 
   return (
     <div className="grid gap-3.5">
       <NowCard now={nowView} />
-      <GrottoBar live={live} />
+      <GrottoBar view={grottoView} />
       <TodayCards cards={todayCards} />
       <SevenDay days={report.days} />
       <Methodology updatedLine={nowView.updatedLine} />

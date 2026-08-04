@@ -75,6 +75,23 @@ export const GROTTO = {
   ceil: 0.985,
 } as const;
 
+/**
+ * Blue Grotto opening hours (Capri local time), used to tell a weather closure
+ * apart from "it is simply outside opening hours". Seasonal and approximate;
+ * capri.net notes hours "may vary". `open`/`close` are 24h decimal hours.
+ * Summer (Apr–Oct): 09:00 to 17:30. Winter (Nov–Mar): 09:00 to 14:00.
+ */
+export const GROTTO_HOURS = {
+  open: 9,
+  summerClose: 17.5,
+  winterClose: 14,
+  /** 0-indexed months Apr..Oct. */
+  summerMonths: [3, 4, 5, 6, 7, 8, 9],
+} as const;
+
+/** How many past days the Blue Grotto history shows. */
+export const HISTORY_DAYS = 7;
+
 /** Gust term added to every standard activity's closure probability. */
 export const GUST = { midOffset: 8, kOffset: 1, weight: 0.6 } as const;
 
