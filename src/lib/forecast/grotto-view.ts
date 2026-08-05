@@ -10,10 +10,7 @@
 
 import { COPY, type GrottoDisplayTone, type GrottoStatus } from "@/config/copy";
 import { GROTTO_HOURS, LOCATION, type PillTone } from "@/config/tuning";
-import type { ActualSlotStatus } from "./grotto-actual";
-import { compass, pct } from "./math";
-import { pillTone } from "./model";
-import type { DayForecast, Slot } from "./types";
+import { pct } from "./math";
 
 export interface GrottoView {
   label: string;
@@ -86,88 +83,104 @@ export function buildGrottoView({
   };
 }
 
-/* ------------------------------------------- 7-day history (model hindcast) */
+/* --------------------------------------- 7-day history (timeline + grid) */
 
-/** A recorded intra-day change, with the sea conditions behind it. */
-export interface HistoryTransition {
-  time: string; // "11:30" Capri-local
-  to: "open" | "closed";
-  wave: number | null; // m
-  wind: number | null; // kt
-  from: string | null; // compass bearing
+/** One open/closed segment of a recorded day, with the sea behind it.
+ *  Produced by the history route; rendered as a bar chunk + a grid row. */
+export interface HistorySegment {
+  startMin: number;
+  endMin: number;
+  start: string; // "9:00"
+  end: string; // "11:30"
+  status: "open" | "closed";
+  /** Time shown on the bar at this boundary; null for the first segment. */
+  transitionLabel: string | null;
+  cells: Record<string, string>;
 }
-export interface HistoryActual {
-  am: ActualSlotStatus;
-  pm: ActualSlotStatus;
-  transitions: HistoryTransition[];
-}
-/** A history day = the model day plus the recorded status (null until logged). */
-export type HistoryDay = DayForecast & { actual: HistoryActual | null };
-
-export interface HistoryCell {
-  pctText: string;
-  tone: PillTone | "none";
-}
-export interface HistoryNumber {
+/** A modeled AM/PM slot, shown when the recorder has no data for the day. */
+export interface HistoryModeledSlot {
   label: string;
-  value: string;
+  pct: string;
+  tone: PillTone;
+  cells: Record<string, string>;
 }
-export interface HistoryRow {
+export interface HistoryDayPayload {
+  date: string;
+  label: string; // "Mon 3 Aug"
+  /** Recorded segments, or null when nothing was logged for the day. */
+  segments: HistorySegment[] | null;
+  modeled: HistoryModeledSlot[];
+}
+
+export interface HistoryBarSegment {
+  widthPct: number;
+  kind: "open" | "closed" | "modeled";
+  label: string | null;
+}
+export interface HistoryGridRow {
+  time: string;
+  statusLabel: string;
+  statusKind: "open" | "closed" | "modeled";
+  tone: PillTone | null;
+  cells: Record<string, string>;
+}
+export interface HistoryDayView {
   date: string;
   label: string;
-  am: HistoryCell;
-  pm: HistoryCell;
-  numbers: HistoryNumber[];
-  /** Recorded AM/PM status text, null when nothing was logged for the day. */
-  reported: { am: string; pm: string } | null;
-  /** Recorded intra-day changes, pre-formatted (e.g. "Closed ~11:30 · waves 1.2 m NW, 22 kt"). */
-  changes: string[] | null;
+  recorded: boolean;
+  bar: HistoryBarSegment[];
+  rows: HistoryGridRow[];
 }
 
-const historyCell = (slot: Slot | null): HistoryCell =>
-  slot
-    ? { pctText: pct(slot.p.grotto), tone: pillTone(slot.p.grotto) }
-    : { pctText: "—", tone: "none" };
+/** Shared axis: 9am to 6pm (equal 3-hour steps). Bars fill their real opening
+ *  hours within it, so shorter winter days simply end earlier on the same scale. */
+const AXIS_MIN = 9 * 60;
+const AXIS_SPAN = 9 * 60;
 
-const historyLabel = (date: string) =>
-  new Date(`${date}T12:00:00`).toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+const closeMinForDate = (date: string) =>
+  ((GROTTO_HOURS.summerMonths as readonly number[]).includes(Number(date.slice(5, 7)) - 1)
+    ? GROTTO_HOURS.summerClose
+    : GROTTO_HOURS.winterClose) * 60;
 
-/** Turn past DayForecasts into history rows: the modeled grotto odds per
- *  AM/PM slot, plus the sea report behind them. */
-export function buildGrottoHistory(days: HistoryDay[]): HistoryRow[] {
+const widthOf = (fromMin: number, toMin: number) =>
+  Math.max(0, ((toMin - fromMin) / AXIS_SPAN) * 100);
+
+/** Turn the history payload into render models: a timeline bar per day plus the
+ *  expandable grid behind it (recorded segments, or the modeled fallback). */
+export function buildHistoryView(days: HistoryDayPayload[]): HistoryDayView[] {
   const C = COPY.grottoHistory;
-  const L = C.numberLabels;
-  const statusText = (s: ActualSlotStatus) => (s ? C.statusWord[s] : C.statusWord.none);
-
   return days.map((day) => {
-    const pair = (f: (s: Slot) => string) =>
-      `${day.am ? f(day.am) : "—"} / ${day.pm ? f(day.pm) : "—"}`;
-    const actual = day.actual;
+    if (day.segments && day.segments.length) {
+      return {
+        date: day.date,
+        label: day.label,
+        recorded: true,
+        bar: day.segments.map((s) => ({
+          widthPct: widthOf(s.startMin, s.endMin),
+          kind: s.status,
+          label: s.transitionLabel,
+        })),
+        rows: day.segments.map((s) => ({
+          time: `${s.start}–${s.end}`,
+          statusLabel: C.statusWord[s.status],
+          statusKind: s.status,
+          tone: null,
+          cells: s.cells,
+        })),
+      };
+    }
     return {
       date: day.date,
-      label: historyLabel(day.date),
-      am: historyCell(day.am),
-      pm: historyCell(day.pm),
-      numbers: [
-        { label: L.waves, value: pair((x) => `${x.wave.toFixed(1)} m`) },
-        { label: L.swell, value: pair((x) => `${x.swell.toFixed(1)} m`) },
-        { label: L.from, value: pair((x) => compass(x.wDir)) },
-        { label: L.wind, value: pair((x) => `${Math.round(x.wind)} kt ${compass(x.dir)}`) },
-      ],
-      reported: actual ? { am: statusText(actual.am), pm: statusText(actual.pm) } : null,
-      changes: actual
-        ? actual.transitions.map((tr) => {
-            const sea =
-              tr.wave != null && tr.wind != null && tr.from
-                ? ` · waves ${tr.wave} m ${tr.from}, ${tr.wind} kt`
-                : "";
-            return `${C.transitionWord[tr.to]} ~${tr.time}${sea}`;
-          })
-        : null,
+      label: day.label,
+      recorded: false,
+      bar: [{ widthPct: widthOf(AXIS_MIN, closeMinForDate(day.date)), kind: "modeled", label: null }],
+      rows: day.modeled.map((m) => ({
+        time: m.label,
+        statusLabel: m.pct,
+        statusKind: "modeled" as const,
+        tone: m.tone,
+        cells: m.cells,
+      })),
     };
   });
 }

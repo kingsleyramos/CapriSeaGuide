@@ -87,19 +87,30 @@ export const COPY = {
 
   grottoHistory: {
     title: "Blue Grotto, last 7 days",
-    subtitle: "Modeled from past sea conditions during opening hours.",
-    amLabel: "AM",
-    pmLabel: "PM",
-    seaHeading: "Sea report (AM / PM)",
-    numberLabels: { waves: "Waves", swell: "Swell", from: "From", wind: "Wind" },
-    reportedHeading: "Reported status (AM / PM)",
-    statusWord: { open: "Open", closed: "Closed", mixed: "Mixed", none: "—" },
-    noRecord: "No recorded status yet; logging begins once the recorder is live.",
-    changesHeading: "Changes during the day",
-    transitionWord: { open: "Reopened", closed: "Closed" },
+    subtitle: "Open and closed through the day, opening hours only.",
+    /** Labels across the shared 9am to 6pm axis (equal 3-hour steps). */
+    timeAxis: ["9am", "12pm", "3pm", "6pm"],
+    /** Expanded-grid columns. `mobile: true` also shows on phones; the rest are
+     *  tablet and up. Reorder, relabel, add or drop here. Each `key` must have a
+     *  matching value produced by the history route. */
+    columns: [
+      { key: "waves", label: "Waves", mobile: false },
+      { key: "swell", label: "Swell", mobile: true },
+      { key: "period", label: "Period", mobile: true },
+      { key: "from", label: "From", mobile: true },
+      { key: "wind", label: "Wind", mobile: true },
+      { key: "gusts", label: "Gusts", mobile: false },
+      { key: "modeled", label: "Modeled", mobile: false },
+    ],
+    timeHeading: "Time",
+    statusHeading: "Status",
+    statusWord: { open: "Open", closed: "Closed" },
+    morning: "Morning",
+    afternoon: "Afternoon",
+    noRecord: "No recorded status for this day.",
+    /** Honest label until the recorder has logged real calls. */
+    modelNote: "The percentages are modeled; reported open and closed fills in once the recorder is live.",
     empty: "History isn't available right now.",
-    /** Honest label until the recorder (phase C) logs the boatmen's real call. */
-    modelNote: "Modeled from sea conditions, not yet the boatmen's actual daily call.",
   },
 
   today: {

@@ -1,79 +1,82 @@
 /**
- * Turns the recorder's raw reading series into what the history shows:
- * the actual AM/PM status, and the intra-day open/closed changes with times.
+ * Turns the recorder's raw reading series into open/closed *segments* for one
+ * day: contiguous runs of the same status, spanning opening hours. A day that
+ * stayed open is one segment; one that closed and reopened is three; two
+ * closures is five. Segment widths are durations, so the timeline handles any
+ * number without a ragged grid.
  *
- * Times are at the poll resolution (~30 min). Only readings inside opening
- * hours exist (the poller no-ops otherwise), so a status change between two
- * consecutive readings is a genuine weather-driven flip, not the scheduled
- * daily open/close.
+ * Only readings inside opening hours exist (the poller no-ops otherwise), so a
+ * status change between consecutive readings is a genuine weather flip, not the
+ * scheduled daily open/close. Times are at the poll resolution (~30 min), and
+ * the day is bounded by its season's close (see GROTTO_HOURS).
  */
 
-import { LOCATION, SLOT_HOURS } from "@/config/tuning";
+import { GROTTO_HOURS, LOCATION } from "@/config/tuning";
 import type { GrottoReading } from "./types";
 
-export type ActualSlotStatus = "open" | "closed" | "mixed" | null;
-
-export interface ActualTransition {
-  /** Capri-local "HH:MM" of the reading where the new status first appeared. */
-  time: string;
-  /** Capri-local hour (0-23) of that reading, for pairing with sea conditions. */
+export interface ActualSegment {
+  /** Minutes from midnight (Capri local), for proportional bar widths. */
+  startMin: number;
+  endMin: number;
+  start: string; // "9:00"
+  end: string; // "11:30"
+  status: "open" | "closed";
+  /** Representative Capri-local hour, for pairing with sea conditions. */
   hour: number;
-  to: "open" | "closed";
 }
 
-export interface ActualDay {
-  am: ActualSlotStatus;
-  pm: ActualSlotStatus;
-  transitions: ActualTransition[];
-}
+const pad = (n: number) => String(n).padStart(2, "0");
+const minToHHMM = (min: number) => `${Math.floor(min / 60)}:${pad(min % 60)}`;
 
-interface Local {
-  date: string;
-  hour: number; // 0-23
-  hhmm: string;
-}
-
-function capriLocal(ms: number, timezone: string): Local {
+function capriParts(ms: number, timezone: string) {
   const d = new Date(new Date(ms).toLocaleString("en-US", { timeZone: timezone }));
-  const pad = (n: number) => String(n).padStart(2, "0");
   return {
     date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
     hour: d.getHours(),
-    hhmm: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    minute: d.getHours() * 60 + d.getMinutes(),
   };
 }
 
-const summarize = (statuses: string[]): ActualSlotStatus => {
-  const defined = statuses.filter((s) => s === "open" || s === "closed");
-  if (!defined.length) return null;
-  return defined.every((s) => s === defined[0]) ? (defined[0] as "open" | "closed") : "mixed";
-};
+const closeHourForMonth = (month: number) =>
+  (GROTTO_HOURS.summerMonths as readonly number[]).includes(month)
+    ? GROTTO_HOURS.summerClose
+    : GROTTO_HOURS.winterClose;
 
-/** Derive the actual status + intra-day transitions for one Capri-local date. */
-export function deriveActualDay(
+/** Merge a day's readings into open/closed segments across opening hours. */
+export function deriveSegments(
   readings: GrottoReading[],
   date: string,
   timezone: string = LOCATION.timezone,
-): ActualDay {
+): ActualSegment[] {
   const day = readings
-    .map((r) => ({ r, l: capriLocal(r.t, timezone) }))
-    .filter((x) => x.l.date === date)
-    .sort((a, b) => a.r.t - b.r.t);
+    .map((r) => ({ ...capriParts(r.t, timezone), status: r.status, t: r.t }))
+    .filter((x) => x.date === date && (x.status === "open" || x.status === "closed"))
+    .sort((a, b) => a.t - b.t);
+  if (!day.length) return [];
 
-  const inSlot = (slot: readonly number[]) =>
-    day.filter((x) => slot.includes(x.l.hour)).map((x) => x.r.status);
+  const month = Number(date.slice(5, 7)) - 1;
+  const openMin = GROTTO_HOURS.open * 60;
+  const closeMin = closeHourForMonth(month) * 60;
 
-  const transitions: ActualTransition[] = [];
-  for (let i = 1; i < day.length; i++) {
-    const to = day[i].r.status;
-    if (to !== day[i - 1].r.status && (to === "open" || to === "closed")) {
-      transitions.push({ time: day[i].l.hhmm, hour: day[i].l.hour, to });
-    }
+  // Collapse consecutive same-status readings into runs (the change points).
+  const runs: { min: number; hour: number; status: "open" | "closed" }[] = [];
+  for (const x of day) {
+    const last = runs[runs.length - 1];
+    if (last && last.status === x.status) continue;
+    runs.push({ min: x.minute, hour: x.hour, status: x.status as "open" | "closed" });
   }
 
-  return {
-    am: summarize(inSlot(SLOT_HOURS.am)),
-    pm: summarize(inSlot(SLOT_HOURS.pm)),
-    transitions,
-  };
+  // The first run is assumed to hold from opening; the last, until close.
+  return runs.map((run, i) => {
+    const startMin = i === 0 ? openMin : run.min;
+    const endMin = i < runs.length - 1 ? runs[i + 1].min : Math.max(closeMin, run.min);
+    return {
+      startMin,
+      endMin,
+      start: minToHHMM(startMin),
+      end: minToHHMM(endMin),
+      status: run.status,
+      hour: i === 0 ? GROTTO_HOURS.open : run.hour,
+    };
+  });
 }

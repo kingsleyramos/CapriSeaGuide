@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildDays, buildHours } from "./aggregate";
 import {
-  buildGrottoHistory,
   buildGrottoView,
+  buildHistoryView,
   grottoCloseHour,
   isWithinGrottoHours,
+  type HistoryDayPayload,
 } from "./grotto-view";
-import type { RawHour } from "./types";
 
 const TZ = "Europe/Rome";
 const at = (iso: string) => new Date(iso);
@@ -59,51 +58,44 @@ describe("buildGrottoView state model", () => {
   });
 });
 
-describe("buildGrottoHistory", () => {
-  const rawFor = (dates: string[]): RawHour[] =>
-    dates.flatMap((date) =>
-      Array.from({ length: 24 }, (_, h) => ({
-        t: `${date}T${String(h).padStart(2, "0")}:00`,
-        wind: 10,
-        dir: 200,
-        gust: 15,
-        press: 1015,
-        rain: 0,
-        windModelStd: 1,
-        windEnsembleStd: 1,
-        wave: 0.5,
-        swell: 0.4,
-        per: 6,
-        wDir: 300,
-        waveModelStd: 0.05,
-      })),
-    );
-
-  it("builds a labeled row per day with AM/PM cells and a sea report", () => {
-    const model = buildDays(buildHours(rawFor(["2026-08-01", "2026-08-02"])), 2);
-    const rows = buildGrottoHistory(model.map((d) => ({ ...d, actual: null })));
-    expect(rows).toHaveLength(2);
-    expect(rows[0].label).toMatch(/Aug/);
-    expect(rows[0].am.pctText).toMatch(/%/);
-    expect(rows[0].pm.pctText).toMatch(/%/);
-    expect(rows[0].reported).toBeNull();
-    expect(rows[0].numbers.map((n) => n.label)).toEqual(["Waves", "Swell", "From", "Wind"]);
-    expect(rows[0].numbers[0].value).toContain("/");
+describe("buildHistoryView", () => {
+  it("renders recorded segments as a bar and grid rows", () => {
+    const payload: HistoryDayPayload[] = [
+      {
+        date: "2026-08-04",
+        label: "Tue 4 Aug",
+        segments: [
+          { startMin: 540, endMin: 690, start: "9:00", end: "11:30", status: "open", transitionLabel: null, cells: { swell: "0.4 m" } },
+          { startMin: 690, endMin: 840, start: "11:30", end: "14:00", status: "closed", transitionLabel: "11:30", cells: { swell: "0.9 m" } },
+        ],
+        modeled: [],
+      },
+    ];
+    const [v] = buildHistoryView(payload);
+    expect(v.recorded).toBe(true);
+    expect(v.bar.map((b) => b.kind)).toEqual(["open", "closed"]);
+    expect(v.bar[0].widthPct).toBeCloseTo((150 / 540) * 100, 5);
+    expect(v.rows[1].time).toBe("11:30–14:00");
+    expect(v.rows[1].statusKind).toBe("closed");
+    expect(v.rows[1].cells.swell).toBe("0.9 m");
   });
 
-  it("surfaces recorded status and intra-day changes when present", () => {
-    const model = buildDays(buildHours(rawFor(["2026-08-01"])), 1);
-    const rows = buildGrottoHistory(
-      model.map((d) => ({
-        ...d,
-        actual: {
-          am: "mixed" as const,
-          pm: "open" as const,
-          transitions: [{ time: "11:30", to: "closed" as const, wave: 1.2, wind: 22, from: "NW" }],
-        },
-      })),
-    );
-    expect(rows[0].reported).toEqual({ am: "Mixed", pm: "Open" });
-    expect(rows[0].changes).toEqual(["Closed ~11:30 · waves 1.2 m NW, 22 kt"]);
+  it("falls back to a modeled bar and rows when nothing is recorded", () => {
+    const payload: HistoryDayPayload[] = [
+      {
+        date: "2026-08-04",
+        label: "Tue 4 Aug",
+        segments: null,
+        modeled: [
+          { label: "Morning", pct: "4%", tone: "low", cells: { swell: "0.4 m" } },
+          { label: "Afternoon", pct: "5%", tone: "low", cells: { swell: "0.5 m" } },
+        ],
+      },
+    ];
+    const [v] = buildHistoryView(payload);
+    expect(v.recorded).toBe(false);
+    expect(v.bar[0].kind).toBe("modeled");
+    expect(v.rows.map((r) => r.statusKind)).toEqual(["modeled", "modeled"]);
+    expect(v.rows[0].statusLabel).toBe("4%");
   });
 });
