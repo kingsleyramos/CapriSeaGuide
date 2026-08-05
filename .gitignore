@@ -22,7 +22,13 @@
 
 # misc
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.pem
+
+# editor state
+.vscode/
+.idea/
 
 # debug
 npm-debug.log*
@@ -39,3 +45,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# machine-local agent settings (tool permissions, etc.) - never shared
+.claude/

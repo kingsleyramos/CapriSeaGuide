@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { LOCATION } from "@/config/tuning";
+import { PublicError, publicMessage } from "@/lib/errors";
 import { buildReport } from "@/lib/forecast/aggregate";
 import { fetchSources } from "@/lib/sources/open-meteo";
 
@@ -9,7 +10,7 @@ export const revalidate = 3600;
 export async function GET() {
   try {
     const { raw, meta } = await fetchSources();
-    if (!raw.length) throw new Error("The forecast service returned no data.");
+    if (!raw.length) throw new PublicError("The forecast service returned no data.");
     // fetchedAt is this response's generation time. The upstream Open-Meteo
     // fetches have their own hourly Data Cache, so the served data can be
     // slightly older than this stamp: "Updated …" means "assembled at", not
@@ -21,8 +22,9 @@ export async function GET() {
       },
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to load the forecast.";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json(
+      { error: publicMessage(error, "Failed to load the forecast.") },
+      { status: 502 },
+    );
   }
 }

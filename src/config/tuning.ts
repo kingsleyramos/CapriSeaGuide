@@ -21,8 +21,8 @@ export const LOCATION = {
 
 /** Which local hours count as "morning" and "afternoon" slots. */
 export const SLOT_HOURS = {
-  am: [9, 10, 11, 12],
-  pm: [13, 14, 15, 16, 17],
+  morning: [9, 10, 11, 12],
+  afternoon: [13, 14, 15, 16, 17],
 } as const;
 
 export const FORECAST_DAYS = 7;
@@ -91,10 +91,6 @@ export const GROTTO_HOURS = {
 
 /** How many past days the Blue Grotto history shows. */
 export const HISTORY_DAYS = 7;
-
-/** How many past days of recorded live status the recorder keeps. We store 30
- *  but show HISTORY_DAYS; bump HISTORY_DAYS later to surface the rest. */
-export const RETENTION_DAYS = 30;
 
 /**
  * Bands for the grotto's forecast, i.e. the pale part of the live day's bar:

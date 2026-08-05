@@ -5,9 +5,11 @@ import { REFRESH } from "@/config/tuning";
 import type { GrottoTimelinePayload } from "@/lib/forecast/grotto-view";
 
 /** Loads the Blue Grotto timeline (today's bar + last-7-day history) and
- *  refreshes hourly. Returns null until the first load resolves. */
-export function useGrottoHistory(): GrottoTimelinePayload | null {
+ *  refreshes hourly. `settled` flips once the first attempt finishes, success
+ *  or failure, so a dead endpoint cannot leave the placeholder up forever. */
+export function useGrottoHistory(): { data: GrottoTimelinePayload | null; settled: boolean } {
   const [data, setData] = useState<GrottoTimelinePayload | null>(null);
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -21,6 +23,8 @@ export function useGrottoHistory(): GrottoTimelinePayload | null {
         }
       } catch {
         /* keep the previous value */
+      } finally {
+        if (active) setSettled(true);
       }
     };
     void load();
@@ -31,5 +35,5 @@ export function useGrottoHistory(): GrottoTimelinePayload | null {
     };
   }, []);
 
-  return data;
+  return { data, settled };
 }

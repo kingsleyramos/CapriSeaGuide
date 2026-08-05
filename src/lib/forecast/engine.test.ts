@@ -208,15 +208,15 @@ describe("aggregation", () => {
   it("groups into days with AM and PM slots", () => {
     const days = buildDays(hours);
     expect(days).toHaveLength(2);
-    expect(days[0].am).not.toBeNull();
-    expect(days[0].pm).not.toBeNull();
+    expect(days[0].morning).not.toBeNull();
+    expect(days[0].afternoon).not.toBeNull();
     expect(days[0].lead).toBe(0);
   });
 
   it("the rough NW day reads far worse than the calm day", () => {
     const days = buildDays(hours);
-    expect(days[1].am!.head).toBeGreaterThan(days[0].am!.head + 0.4);
-    expect(days[0].am!.head).toBeLessThan(0.2);
+    expect(days[1].morning!.head).toBeGreaterThan(days[0].morning!.head + 0.4);
+    expect(days[0].morning!.head).toBeLessThan(0.2);
   });
 
   it("buildReport yields a compact, serializable payload", () => {
@@ -243,11 +243,26 @@ describe("view models", () => {
     "Europe/Rome",
   );
 
+  const noonCapri = new Date("2026-08-03T10:00:00Z"); // 12:00 Rome (CEST)
+  const eveningCapri = new Date("2026-08-03T16:30:00Z"); // 18:30 Rome, after the PM slot
+
   it("today cards render both halves with copy-driven titles", () => {
-    const cards = buildTodayCards(days[0]);
-    expect(cards.map((c) => c.key)).toEqual(["am", "pm"]);
-    expect(cards[0].title).toMatch(/morning/i);
+    const cards = buildTodayCards(days, noonCapri, "Europe/Rome");
+    expect(cards.map((c) => c.key)).toEqual(["morning", "afternoon"]);
+    expect(cards[0].title).toBe("This morning");
     expect(cards[0].top).toHaveLength(3);
+  });
+
+  it("today cards roll to tomorrow once the afternoon has ended", () => {
+    const cards = buildTodayCards(days, eveningCapri, "Europe/Rome");
+    expect(cards[0].title).toBe("Tomorrow morning");
+    expect(cards[1].title).toBe("Tomorrow afternoon");
+  });
+
+  it("today cards skip a stale leading day after midnight", () => {
+    const pastMidnight = new Date("2026-08-03T22:30:00Z"); // 00:30 Rome, Aug 4
+    const cards = buildTodayCards(days, pastMidnight, "Europe/Rome");
+    expect(cards[0].title).toBe("This morning"); // Aug 4 is now today, not tomorrow
   });
 
   it("verdictOrDash returns a dash for an empty slot", () => {
@@ -255,13 +270,22 @@ describe("view models", () => {
   });
 
   it("day row explains an NW-swell closure and labels Today/Tomorrow", () => {
-    const rough = buildDayRow(days[1])!;
+    const rough = buildDayRow(days[1], noonCapri, "Europe/Rome")!;
     expect(rough.why).toMatch(/closes the Blue Grotto/);
-    expect(buildDayRow(days[0])!.label).toMatch(/Today/);
+    expect(buildDayRow(days[0], noonCapri, "Europe/Rome")!.label).toMatch(/Today/);
+    expect(rough.label).toMatch(/Tomorrow/);
+  });
+
+  it("day labels track the client clock, not the report's lead", () => {
+    const pastMidnight = new Date("2026-08-03T22:30:00Z"); // 00:30 Rome, Aug 4
+    expect(buildDayRow(days[0], pastMidnight, "Europe/Rome")!.label).not.toMatch(/Today/);
+    expect(buildDayRow(days[1], pastMidnight, "Europe/Rome")!.label).toMatch(/Today/);
   });
 
   it("buildDayRow returns null when a day has neither AM nor PM slot", () => {
-    expect(buildDayRow({ date: "2026-08-03", lead: 0, am: null, pm: null })).toBeNull();
+    expect(
+      buildDayRow({ date: "2026-08-03", lead: 0, morning: null, afternoon: null }, noonCapri, "Europe/Rome"),
+    ).toBeNull();
   });
 
   it("pickCurrentHour finds the hour nearest Capri wall-time", () => {

@@ -3,8 +3,10 @@ import { Card } from "@/components/ui/card";
 
 const M = COPY.methodology;
 
-/** The "How this page works" panel, rendered from the centralized copy. */
-export function Methodology({ updatedLine }: { updatedLine: string }) {
+/** The "How this page works" panel, rendered from the centralized copy. All
+ *  static, so it paints before the fetches land; `updatedLine` is the one
+ *  fetched value and trails the last sentence, where its arrival shifts nothing. */
+export function Methodology({ updatedLine }: { updatedLine?: string }) {
   return (
     <Card className="p-5">
       <div className="mb-3 text-base font-bold">{M.title}</div>
@@ -47,7 +49,8 @@ export function Methodology({ updatedLine }: { updatedLine: string }) {
         </div>
 
         <div className="text-[13px] text-ink-mute">
-          {M.disclaimer} {M.lastUpdatedPrefix} {updatedLine}.
+          {M.disclaimer}
+          {updatedLine ? ` ${M.lastUpdatedPrefix} ${updatedLine}.` : null}
         </div>
       </div>
     </Card>

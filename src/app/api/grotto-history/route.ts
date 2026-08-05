@@ -15,6 +15,7 @@ import type {
   HistoryRow,
   TodayPayload,
 } from "@/lib/forecast/grotto-view";
+import { PublicError, publicMessage } from "@/lib/errors";
 import { compass } from "@/lib/forecast/math";
 import type { HourPoint } from "@/lib/forecast/types";
 import { fetchHistory } from "@/lib/sources/open-meteo";
@@ -61,11 +62,22 @@ const dayLabel = (date: string) =>
     month: "short",
   });
 
-export async function GET() {
+export async function GET(req: Request) {
+  // Dynamic routes key the CDN cache on the query string, so unique queries
+  // would each cost an invocation plus a store read. This route takes no
+  // parameters; reject any query before doing work. (Prerendered routes are
+  // immune and must not read req.url, which would de-optimize them.)
+  if (new URL(req.url).search) {
+    return NextResponse.json(
+      { error: "This endpoint takes no query parameters." },
+      { status: 400 },
+    );
+  }
+
   try {
     const tz = LOCATION.timezone;
     const { raw } = await fetchHistory();
-    if (!raw.length) throw new Error("No history is available right now.");
+    if (!raw.length) throw new PublicError("No history is available right now.");
 
     // Group the hourly sea by Capri-local date (past days + today + tomorrow).
     const hours = buildHours(raw);
@@ -158,8 +170,8 @@ export async function GET() {
       const dayClose = closeHourForMonth(monthOf) * 60;
       const bar: BarSegment[] = [{ startMin: openMin, endMin: dayClose, tone: "none", label: null }];
       const slots: { label: string; hours: HourPoint[] }[] = [
-        { label: H.slot.morning, hours: hoursOf(date).filter((h) => (SLOT_HOURS.am as readonly number[]).includes(h.hour)) },
-        { label: H.slot.afternoon, hours: hoursOf(date).filter((h) => (SLOT_HOURS.pm as readonly number[]).includes(h.hour)) },
+        { label: H.slot.morning, hours: hoursOf(date).filter((h) => (SLOT_HOURS.morning as readonly number[]).includes(h.hour)) },
+        { label: H.slot.afternoon, hours: hoursOf(date).filter((h) => (SLOT_HOURS.afternoon as readonly number[]).includes(h.hour)) },
       ];
       const rows: HistoryRow[] = slots
         .filter((s) => s.hours.length)
@@ -172,7 +184,9 @@ export async function GET() {
       { headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=1800" } },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load history.";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json(
+      { error: publicMessage(error, "Failed to load history.") },
+      { status: 502 },
+    );
   }
 }

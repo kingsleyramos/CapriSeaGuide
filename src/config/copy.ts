@@ -36,7 +36,6 @@ export const COPY = {
   },
 
   states: {
-    loading: "Loading the marine forecast…",
     errorTitle: "Couldn't load the forecast",
     retry: "Retry",
     genericError: "No network connection.",
@@ -65,6 +64,8 @@ export const COPY = {
   grottoBar: {
     title: "Blue Grotto live status",
     viewReport: "View report →",
+    /** Sizes the status-line placeholder; keep it about as long as a `line` below. */
+    loadingLine: "Checking with the boatmen…",
     statusLabel: {
       open: "Open now",
       closed: "Closed now",
@@ -132,6 +133,9 @@ export const COPY = {
   today: {
     morning: { title: "This morning", sub: "09:00 – 13:00" },
     afternoon: { title: "This afternoon", sub: "13:00 – 18:00" },
+    /** Used once today's afternoon has ended and the cards roll to tomorrow. */
+    tomorrowMorning: { title: "Tomorrow morning", sub: "09:00 – 13:00" },
+    tomorrowAfternoon: { title: "Tomorrow afternoon", sub: "13:00 – 18:00" },
     topHeading: "Chance of being closed or cancelled",
     topActivityLabels: {
       grotto: "Blue Grotto",
@@ -144,8 +148,9 @@ export const COPY = {
     title: "Next 7 days",
     subtitle: "Dates follow Capri local time.",
     chanceOff: "Chance it's off",
-    amLabel: "AM",
-    pmLabel: "PM",
+    /** Chip prefixes for the two half-day slots (09:00-13:00 / 13:00-18:00). */
+    morningLabel: "AM",
+    afternoonLabel: "PM",
     numbersHeading: "The numbers (AM / PM)",
     numberLabels: {
       waves: "Waves",

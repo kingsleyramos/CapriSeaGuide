@@ -7,6 +7,12 @@
 # Setup: add two repository secrets
 #   POLL_URL     https://<your-domain>/api/poll-grotto
 #   POLL_SECRET  the same value set as POLL_SECRET in the Vercel project
+# POLL_URL must be the domain the site actually serves on, never one that
+# redirects to it. The curl below does not follow redirects, and a 3xx is not an
+# HTTP error, so a redirecting URL would otherwise pass while recording nothing;
+# the step asserts a 2xx to catch exactly that. Following redirects would not
+# help either: curl drops the Authorization header when one crosses to a
+# different host, and apex and www count as different hosts.
 # GitHub may delay scheduled runs a few minutes (fine here) and disables
 # schedules after 60 days of no repo activity; re-enable from the Actions tab.
 name: poll-grotto
@@ -15,6 +21,11 @@ on:
   schedule:
     - cron: "*/30 7-15 * * *"
   workflow_dispatch: {}
+
+# This job only makes one outbound curl; it never touches the repo, so it is
+# handed no GITHUB_TOKEN at all. Declared here rather than relying on the
+# repository default, which a later settings change could widen.
+permissions: {}
 
 # Don't pile up runs if one is slow.
 concurrency:
@@ -27,9 +38,19 @@ jobs:
     timeout-minutes: 2
     steps:
       - name: Record grotto status
+        # Assert a 2xx rather than relying on curl -f, which treats a 3xx as
+        # success and would pass silently on a redirecting POLL_URL. Echoing the
+        # body puts the outcome in the log: "recorded" vs a "skipped" no-op.
         run: |
-          curl -fsS --retry 2 --max-time 30 -X POST "$POLL_URL" \
-            -H "Authorization: Bearer $POLL_SECRET"
+          body=$(mktemp)
+          code=$(curl -sS --retry 2 --max-time 30 \
+            -o "$body" -w '%{http_code}' \
+            -X POST "$POLL_URL" -H "Authorization: Bearer $POLL_SECRET")
+          echo "HTTP $code: $(cat "$body")"
+          case "$code" in
+            2??) ;;
+            *) echo "::error::poll-grotto returned HTTP $code"; exit 1 ;;
+          esac
         env:
           POLL_URL: ${{ secrets.POLL_URL }}
           POLL_SECRET: ${{ secrets.POLL_SECRET }}

@@ -5,9 +5,11 @@ import { REFRESH } from "@/config/tuning";
 import type { GrottoLive } from "@/lib/forecast/types";
 
 /** Loads the cross-checked live Blue Grotto status and refreshes hourly.
- *  Returns null until the first read resolves; the bar shows "Unknown" meanwhile. */
-export function useGrotto(): GrottoLive | null {
+ *  `settled` flips once the first attempt finishes, success or failure, so a
+ *  dead endpoint cannot leave the placeholder up forever. */
+export function useGrotto(): { live: GrottoLive | null; settled: boolean } {
   const [live, setLive] = useState<GrottoLive | null>(null);
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -19,6 +21,8 @@ export function useGrotto(): GrottoLive | null {
         if (active) setLive(json);
       } catch {
         /* leave the previous value in place */
+      } finally {
+        if (active) setSettled(true);
       }
     };
     void load();
@@ -29,5 +33,5 @@ export function useGrotto(): GrottoLive | null {
     };
   }, []);
 
-  return live;
+  return { live, settled };
 }

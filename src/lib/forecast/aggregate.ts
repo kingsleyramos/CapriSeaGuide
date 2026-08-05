@@ -106,8 +106,8 @@ export function buildDays(
     return {
       date,
       lead,
-      am: buildSlot(inSlot(SLOT_HOURS.am), lead),
-      pm: buildSlot(inSlot(SLOT_HOURS.pm), lead),
+      morning: buildSlot(inSlot(SLOT_HOURS.morning), lead),
+      afternoon: buildSlot(inSlot(SLOT_HOURS.afternoon), lead),
     };
   });
 }

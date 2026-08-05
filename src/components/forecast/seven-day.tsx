@@ -16,15 +16,16 @@ const GRID = "grid grid-cols-[minmax(140px,1fr)_64px_64px] items-center gap-2";
 function SlotVerdictChip({ verdict, prefix }: { verdict: VerdictView; prefix: string }) {
   return (
     <VerdictChip tone={verdict.tone} className="px-2.5 py-1.5 text-xs">
-      {/* margin, not a trailing space, since flex layout would collapse it */}
-      <span className="mr-1 font-semibold opacity-75">{prefix}</span>
+      {/* mr-1, not a trailing space: flex would collapse it. No opacity fade:
+          anything under ~0.92 fails WCAG AA contrast on these chip fills. */}
+      <span className="mr-1 font-semibold">{prefix}</span>
       {verdict.label}
     </VerdictChip>
   );
 }
 
-function DayRow({ day }: { day: DayForecast }) {
-  const row = buildDayRow(day);
+function DayRow({ day, now, timezone }: { day: DayForecast; now: Date; timezone: string }) {
+  const row = buildDayRow(day, now, timezone);
   if (!row) return null;
   const s = COPY.sevenDay;
 
@@ -43,8 +44,8 @@ function DayRow({ day }: { day: DayForecast }) {
         </span>
 
         <span className="flex items-center gap-2">
-          <SlotVerdictChip verdict={row.am} prefix={s.amLabel} />
-          <SlotVerdictChip verdict={row.pm} prefix={s.pmLabel} />
+          <SlotVerdictChip verdict={row.morning} prefix={s.morningLabel} />
+          <SlotVerdictChip verdict={row.afternoon} prefix={s.afternoonLabel} />
           <span className="inline-flex size-[22px] items-center justify-center rounded-full bg-surface-muted text-ink-soft">
             <ChevronDown className="size-3 transition-transform duration-150 group-data-[state=open]:rotate-180" />
           </span>
@@ -62,21 +63,21 @@ function DayRow({ day }: { day: DayForecast }) {
             <div className="text-xs font-semibold uppercase tracking-wider text-ink-mute">
               {s.chanceOff}
             </div>
-            <div className="text-center text-xs font-bold text-ink-soft">{s.amLabel}</div>
-            <div className="text-center text-xs font-bold text-ink-soft">{s.pmLabel}</div>
+            <div className="text-center text-xs font-bold text-ink-soft">{s.morningLabel}</div>
+            <div className="text-center text-xs font-bold text-ink-soft">{s.afternoonLabel}</div>
           </div>
 
           {row.activities.map((a) => (
             <div key={a.key} className={`${GRID} border-b border-line py-2`}>
               <div className="text-sm font-medium text-ink">{a.name}</div>
               <div className="text-center">
-                <OddsPill tone={a.amTone} className="text-[12.5px]">
-                  {a.amPct}
+                <OddsPill tone={a.morningTone} className="text-[12.5px]">
+                  {a.morningPct}
                 </OddsPill>
               </div>
               <div className="text-center">
-                <OddsPill tone={a.pmTone} className="text-[12.5px]">
-                  {a.pmPct}
+                <OddsPill tone={a.afternoonTone} className="text-[12.5px]">
+                  {a.afternoonPct}
                 </OddsPill>
               </div>
             </div>
@@ -103,7 +104,15 @@ function DayRow({ day }: { day: DayForecast }) {
   );
 }
 
-export function SevenDay({ days }: { days: DayForecast[] }) {
+export function SevenDay({
+  days,
+  now,
+  timezone,
+}: {
+  days: DayForecast[];
+  now: Date;
+  timezone: string;
+}) {
   const s = COPY.sevenDay;
   return (
     <Card className="overflow-hidden">
@@ -112,7 +121,7 @@ export function SevenDay({ days }: { days: DayForecast[] }) {
         <div className="text-[13px] font-medium text-ink-soft">{s.subtitle}</div>
       </div>
       {days.map((day) => (
-        <DayRow key={day.date} day={day} />
+        <DayRow key={day.date} day={day} now={now} timezone={timezone} />
       ))}
     </Card>
   );

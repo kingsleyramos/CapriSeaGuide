@@ -2,18 +2,18 @@
 
 import { ChevronDown } from "lucide-react";
 import { COPY } from "@/config/copy";
-import {
-  buildGrottoTimeline,
-  type BarTone,
-  type GrottoView,
-  type HistoryAxisLabel,
-  type HistoryDayView,
-  type TimelineBarSegment,
-  type TodayView,
+import type {
+  BarTone,
+  GrottoTimelineView,
+  GrottoView,
+  HistoryAxisLabel,
+  HistoryDayView,
+  TimelineBarSegment,
+  TodayView,
 } from "@/lib/forecast/grotto-view";
-import { useGrottoHistory } from "@/hooks/use-grotto-history";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { GrottoChip } from "@/components/ui/chip";
 import {
   Collapsible,
@@ -257,25 +257,42 @@ function HistoryDayRow({ view }: { view: HistoryDayView }) {
 }
 
 /**
- * Blue Grotto: live status, today's timeline, and the last-7-day history in one
- * card. The status row keeps its original styling; the bar and history are added
- * below it. `view` is the resolved live status (see buildGrottoView).
+ * Blue Grotto: live status, today's timeline, and the last-7-day history in
+ * one card, each filling in as its own fetch lands. The placeholders are built
+ * from the same fixed-height rows as the real content so the reservation holds
+ * at any viewport; the `settled` flags stop them lingering after a failed fetch.
  */
-export function GrottoStatus({ view }: { view: GrottoView }) {
+export function GrottoStatus({
+  view,
+  timeline,
+  liveSettled,
+  historySettled,
+}: {
+  view: GrottoView;
+  timeline: GrottoTimelineView | null;
+  liveSettled: boolean;
+  historySettled: boolean;
+}) {
   const c = COPY.grottoBar;
   const s = COPY.grottoHistory;
-  const data = useGrottoHistory();
-  const timeline = data ? buildGrottoTimeline(data) : null;
 
   return (
     <Card className="overflow-hidden">
       {/* Live status — unchanged from the standalone bar. */}
       <div className="flex flex-wrap items-center justify-between gap-3.5 px-5 py-4">
         <div className="flex flex-wrap items-center gap-3">
-          <GrottoChip tone={view.tone}>{view.label}</GrottoChip>
+          {/* Placeholder is sized by a real label; do not pin the chip's width
+              to prevent the small swap shift -- it distorts short labels. */}
+          {liveSettled ? (
+            <GrottoChip tone={view.tone}>{view.label}</GrottoChip>
+          ) : (
+            <Skeleton variant="pill">{c.statusLabel.unknown}</Skeleton>
+          )}
           <div>
             <div className="text-[15px] font-bold text-ink">{c.title}</div>
-            <div className="text-[13px] font-medium text-ink-soft">{view.line}</div>
+            <div className="text-[13px] font-medium text-ink-soft">
+              {liveSettled ? view.line : <Skeleton variant="copy">{c.loadingLine}</Skeleton>}
+            </div>
           </div>
         </div>
         <a
@@ -288,18 +305,40 @@ export function GrottoStatus({ view }: { view: GrottoView }) {
         </a>
       </div>
 
-      {/* Today's timeline: reported so far + forecast. */}
-      {timeline?.today && (
+      {/* Today's timeline: reported so far + forecast. Legend and axis are
+          static, so only the bar itself waits. */}
+      {(!historySettled || timeline?.today) && (
         <div className="px-5 pb-4">
           <Legend />
           <div className="mb-1.5">
-            <Axis axis={timeline.axis} />
+            {/* An empty axis still holds its h-4 track height. */}
+            <Axis axis={timeline?.axis ?? []} />
           </div>
-          <TodayRow today={timeline.today} />
+          {timeline?.today ? (
+            <TodayRow today={timeline.today} />
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <span className={cn(GUTTER, "text-[13px] font-semibold")}>
+                  <Skeleton variant="text" className="w-14" />
+                </span>
+                <Skeleton variant="block" className="h-[22px] flex-1 rounded-md border border-line" />
+                <span className={CHEVRON_COL} />
+              </div>
+            </>
+          )}
         </div>
       )}
 
       {/* Last 7 days: a drop-down of the completed history. */}
+      {!historySettled && (
+        <div className="flex items-center justify-between border-t border-line px-5 py-3.5">
+          <span className="text-[14px] font-semibold">
+            <Skeleton variant="copy">{s.historyToggle}</Skeleton>
+          </span>
+          <span className="size-4 shrink-0" />
+        </div>
+      )}
       {timeline && timeline.days.length > 0 && (
         <Collapsible className="border-t border-line">
           <CollapsibleTrigger className="group flex w-full cursor-pointer items-center justify-between px-5 py-3.5 text-left hover:bg-surface-soft focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink">
