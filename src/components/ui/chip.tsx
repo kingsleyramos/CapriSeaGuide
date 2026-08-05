@@ -25,11 +25,13 @@ export function VerdictChip({
 export function GrottoChip({
   tone,
   children,
+  className,
 }: {
   tone: GrottoDisplayTone;
   children: ReactNode;
+  className?: string;
 }) {
-  return <span className={cn(chipBase, grottoChipClass[tone])}>{children}</span>;
+  return <span className={cn(chipBase, grottoChipClass[tone], className)}>{children}</span>;
 }
 
 /** "Chance it's off" percentage pill. */

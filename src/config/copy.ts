@@ -65,6 +65,10 @@ export const COPY = {
   grottoBar: {
     title: "Blue Grotto live status",
     viewReport: "View report →",
+    /** Never read aloud: it only sizes the placeholder that holds this line's
+     *  space while the live status is still in flight, so it wants to be about
+     *  as long as a typical `line` below. */
+    loadingLine: "Checking with the boatmen…",
     statusLabel: {
       open: "Open now",
       closed: "Closed now",

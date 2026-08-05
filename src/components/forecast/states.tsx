@@ -1,18 +1,9 @@
 import { COPY } from "@/config/copy";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 
-/** Shimmering placeholder shown on first load. */
-export function LoadingReport() {
-  return (
-    <div className="grid gap-3 pt-2 [animation:shimmer_1.4s_ease-in-out_infinite]">
-      <Skeleton className="h-[120px]" />
-      <Skeleton className="h-[180px]" />
-      <Skeleton className="h-80" />
-      <div className="text-center text-[13px] text-ink-mute">{COPY.states.loading}</div>
-    </div>
-  );
-}
+/* The whole-page loading state used to live here. It is gone because the page
+ * no longer has one: each card carries its own placeholder (./skeletons), so
+ * there is nothing left that blocks on every fetch at once. */
 
 export function ErrorReport({
   message,

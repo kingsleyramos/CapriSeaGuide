@@ -13,6 +13,7 @@ import type {
 } from "@/lib/forecast/grotto-view";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { GrottoChip } from "@/components/ui/chip";
 import {
   Collapsible,
@@ -150,10 +151,13 @@ function TodayRow({ today }: { today: TodayView }) {
         <span className={CHEVRON_COL} />
       </div>
 
-      {today.dividerLabel && today.dividerPct != null && (
-        <div className="mt-1 flex items-center gap-3">
-          <span className={GUTTER} />
-          <div className="relative h-3.5 flex-1">
+      {/* The row is always laid out, even with no reading to label, so the bar's
+          block is a constant height. Otherwise the first recorded call of the
+          day would add a line and nudge every card below it. */}
+      <div className="mt-1 flex items-center gap-3">
+        <span className={GUTTER} />
+        <div className="relative h-3.5 flex-1">
+          {today.dividerLabel && today.dividerPct != null ? (
             <span
               className="absolute top-0 whitespace-nowrap text-[10px] text-ink-mute"
               style={{
@@ -168,10 +172,10 @@ function TodayRow({ today }: { today: TodayView }) {
             >
               {today.dividerLabel}
             </span>
-          </div>
-          <span className={CHEVRON_COL} />
+          ) : null}
         </div>
-      )}
+        <span className={CHEVRON_COL} />
+      </div>
     </>
   );
 }
@@ -257,31 +261,49 @@ function HistoryDayRow({ view }: { view: HistoryDayView }) {
 
 /**
  * Blue Grotto: live status, today's timeline, and the last-7-day history in one
- * card. The status row keeps its original styling; the bar and history are added
- * below it. `view` is the resolved live status (see buildGrottoView); `timeline`
- * is null only when the history fetch failed, and the card then renders the
- * status row alone. Both arrive from Report, which fetches everything and holds
- * the skeleton until it can render the whole page at once.
+ * card, each filling in as its own fetch lands rather than waiting on the others.
+ *
+ * The two async regions reserve their space up front, which is what lets them
+ * arrive late without moving the page. Both are made of fixed-height rows -- a
+ * legend, an axis, a 22px bar, a label line -- so the reservation holds at any
+ * viewport, unlike a guessed pixel height. `settled` says the fetch has finished
+ * one way or the other; a failure keeps the placeholder from lingering forever.
  */
 export function GrottoStatus({
   view,
   timeline,
+  liveSettled,
+  historySettled,
 }: {
   view: GrottoView;
   timeline: GrottoTimelineView | null;
+  liveSettled: boolean;
+  historySettled: boolean;
 }) {
   const c = COPY.grottoBar;
   const s = COPY.grottoHistory;
+  // The chip's width tracks its label ("Open now" / "Closed" / "Unknown"), so a
+  // late swap would shove the title sideways. A floor wide enough for the
+  // longest label pins it; the placeholder uses the same floor.
+  const chipFloor = "min-w-[124px] justify-center";
 
   return (
     <Card className="overflow-hidden">
       {/* Live status — unchanged from the standalone bar. */}
       <div className="flex flex-wrap items-center justify-between gap-3.5 px-5 py-4">
         <div className="flex flex-wrap items-center gap-3">
-          <GrottoChip tone={view.tone}>{view.label}</GrottoChip>
+          {liveSettled ? (
+            <GrottoChip tone={view.tone} className={chipFloor}>
+              {view.label}
+            </GrottoChip>
+          ) : (
+            <Skeleton variant="pill" className={chipFloor} />
+          )}
           <div>
             <div className="text-[15px] font-bold text-ink">{c.title}</div>
-            <div className="text-[13px] font-medium text-ink-soft">{view.line}</div>
+            <div className="text-[13px] font-medium text-ink-soft">
+              {liveSettled ? view.line : <Skeleton variant="copy">{c.loadingLine}</Skeleton>}
+            </div>
           </div>
         </div>
         <a
@@ -294,18 +316,45 @@ export function GrottoStatus({
         </a>
       </div>
 
-      {/* Today's timeline: reported so far + forecast. */}
-      {timeline?.today && (
+      {/* Today's timeline: reported so far + forecast. The legend and axis need
+          no data, so they paint immediately and only the bar is held back. */}
+      {(!historySettled || timeline?.today) && (
         <div className="px-5 pb-4">
           <Legend />
           <div className="mb-1.5">
-            <Axis axis={timeline.axis} />
+            {/* Axis is a fixed h-4 track, so an empty label set still holds
+                its exact height. */}
+            <Axis axis={timeline?.axis ?? []} />
           </div>
-          <TodayRow today={timeline.today} />
+          {timeline?.today ? (
+            <TodayRow today={timeline.today} />
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <span className={cn(GUTTER, "text-[13px] font-semibold")}>
+                  <Skeleton variant="text" className="w-14" />
+                </span>
+                <Skeleton variant="block" className="h-[22px] flex-1 rounded-md border border-line" />
+                <span className={CHEVRON_COL} />
+              </div>
+              {/* h-4, not h-3.5: the real divider row is a flex line whose
+                  height is set by the chevron column beside it, not by the
+                  label. Two pixels out here is two pixels of shift. */}
+              <div className="mt-1 h-4" />
+            </>
+          )}
         </div>
       )}
 
       {/* Last 7 days: a drop-down of the completed history. */}
+      {!historySettled && (
+        <div className="flex items-center justify-between border-t border-line px-5 py-3.5">
+          <span className="text-[14px] font-semibold">
+            <Skeleton variant="copy">{s.historyToggle}</Skeleton>
+          </span>
+          <span className="size-4 shrink-0" />
+        </div>
+      )}
       {timeline && timeline.days.length > 0 && (
         <Collapsible className="border-t border-line">
           <CollapsibleTrigger className="group flex w-full cursor-pointer items-center justify-between px-5 py-3.5 text-left hover:bg-surface-soft focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink">
