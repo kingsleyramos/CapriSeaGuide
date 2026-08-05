@@ -35,7 +35,7 @@ export const COPY = {
     /** The <title> tag: brand plus what the site actually answers. */
     title: "Capri Sea Guide: Blue Grotto, Boat Tours & Ferries",
     description:
-      "Sea conditions for Capri: whether the Blue Grotto, boat tours, ferries, swimming and kayaking are likely to go ahead, hour by hour and for the days ahead.",
+      "Hourly sea conditions for Capri and the days ahead: what they mean for everything on the water, from the Blue Grotto to the ferry home.",
     /** Canonical origin (also drives Open Graph, sitemap, robots, JSON-LD). */
     url: "https://capriseaguide.com",
     locale: "en_US",
