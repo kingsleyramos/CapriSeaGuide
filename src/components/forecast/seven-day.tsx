@@ -16,8 +16,12 @@ const GRID = "grid grid-cols-[minmax(140px,1fr)_64px_64px] items-center gap-2";
 function SlotVerdictChip({ verdict, prefix }: { verdict: VerdictView; prefix: string }) {
   return (
     <VerdictChip tone={verdict.tone} className="px-2.5 py-1.5 text-xs">
-      {/* margin, not a trailing space, since flex layout would collapse it */}
-      <span className="mr-1 font-semibold opacity-75">{prefix}</span>
+      {/* margin, not a trailing space, since flex layout would collapse it.
+          The prefix is de-emphasised by weight alone: fading white text on
+          these saturated chips drops it under the 4.5:1 contrast AA needs
+          (0.75 gives 3.5:1), and the opacity that would clear the bar is high
+          enough to be indistinguishable from none. */}
+      <span className="mr-1 font-semibold">{prefix}</span>
       {verdict.label}
     </VerdictChip>
   );

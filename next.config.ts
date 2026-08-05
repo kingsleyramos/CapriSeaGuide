@@ -44,6 +44,10 @@ const nextConfig: NextConfig = {
           { key: "Content-Security-Policy", value: contentSecurityPolicy },
           // The pre-CSP2 twin of frame-ancestors; harmless alongside it.
           { key: "X-Frame-Options", value: "DENY" },
+          // Severs this page from any window that opened it, or that it opens.
+          // Safe here: nothing uses window.opener, and every outbound link is
+          // already rel="noopener".
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
