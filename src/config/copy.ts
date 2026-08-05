@@ -75,6 +75,11 @@ export const COPY = {
     updatedPrefix: "Updated",
     capriTimeSuffix: "Capri time",
     inCapriSuffix: "in Capri",
+    /** Tooltip on the sun/moon beside the clock, which explains the theme. */
+    daylight: {
+      day: "Daylight in Capri",
+      night: "Night in Capri",
+    },
     minAgo: (mins: number) => `(${mins} min ago)`,
     statLabels: {
       waves: "Waves",

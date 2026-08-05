@@ -68,6 +68,60 @@
   --color-danger-bg: #fef2f2;
 }
 
+/*
+ * Night palette, applied when it is dark in Capri (see components/theme).
+ *
+ * Not a filter or an inversion: the verdict chips and odds pills carry meaning
+ * through hue, so each was re-picked to keep its identity while clearing 4.5:1
+ * against the surface it sits on. The pills invert -- dark tint, light text --
+ * because a pale pill on a dark card glares.
+ */
+:root[data-theme="dark"] {
+  --color-ink: #e8edf4;
+  --color-ink-soft: #aab6c6;
+  --color-ink-mute: #8e9bad;
+  --color-ink-faint: #7b8798;
+  --color-line: #2a333f;
+  --color-line-soft: #212a35;
+  --color-surface: #12171f;
+  --color-surface-soft: #171d26;
+  --color-surface-muted: #1d2530;
+  --color-link: #6fb6e8;
+
+  --color-calm: #1f7a43;
+  --color-good: #4a7d33;
+  --color-uncertain: #a8620f;
+  --color-likely: #b8461d;
+  --color-off: #c73434;
+  --color-none: #5c6675;
+
+  --color-pill-low-fg: #7ee2a8;
+  --color-pill-low-bg: #14301f;
+  --color-pill-mid-fg: #f5cd7a;
+  --color-pill-mid-bg: #33260c;
+  --color-pill-high-fg: #f7a3a3;
+  --color-pill-high-bg: #361718;
+  --color-pill-none-fg: #9aa6b5;
+  --color-pill-none-bg: #232b36;
+
+  --color-conf-high: #4ec27d;
+  --color-conf-medium: #e0a13f;
+  --color-conf-low: #7b8798;
+
+  /* The "now" card tints: a wash over the surface, not a pastel. */
+  --color-tint-calm: #14251c;
+  --color-tint-uncertain: #251f12;
+  --color-tint-off: #271719;
+
+  --color-grotto-open: #1f7a43;
+  --color-grotto-closed: #c73434;
+  --color-grotto-unknown: #5c6675;
+  --color-grotto-offhours: #4b5563;
+
+  --color-danger-line: #4a2326;
+  --color-danger-bg: #241618;
+}
+
 html,
 body {
   margin: 0;
@@ -78,6 +132,11 @@ body {
   background: var(--color-surface);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  /* Themes swap whole palettes at sunrise and sunset; without this the page
+     snaps between them mid-read. */
+  transition:
+    background-color 400ms ease,
+    color 400ms ease;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -88,5 +147,11 @@ a {
 }
 a:hover {
   text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
 }
 

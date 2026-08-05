@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { COPY } from "@/config/copy";
+import { SunMoon } from "@/components/theme/sun-moon";
 import type { NowView } from "@/lib/forecast/view";
 import { nowTintClass } from "@/lib/tones";
 import { cn } from "@/lib/utils";
@@ -23,8 +24,9 @@ export function NowCard({ now }: { now: NowView }) {
           <span className="text-sm font-semibold text-ink">{c.title}</span>
         </div>
         <div className="text-left sm:text-right">
-          <div className="text-[13px] font-semibold tabular-nums text-ink">
+          <div className="flex items-center gap-1.5 text-[13px] font-semibold tabular-nums text-ink sm:justify-end">
             {now.capriNowLine}
+            <SunMoon />
           </div>
           <div className="text-xs font-medium text-ink-soft">
             {c.updatedPrefix} {now.updatedLine} · {c.refreshNote}
