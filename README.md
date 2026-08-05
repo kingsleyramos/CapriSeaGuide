@@ -158,6 +158,14 @@ history builds up from the day you switch it on.
    **required**: the poll endpoint fails closed (returns 500) if it is missing, so
    a dropped or mistyped secret can never leave the endpoint open. Local dev is
    exempt, so it still runs without one.
+
+   `POLL_URL` must be the domain your site actually *serves* on, not one that
+   redirects to it. If your apex redirects to `www` (or the reverse), point at
+   the destination. The poller does not follow redirects, and a redirect is not
+   an HTTP error, so a redirecting URL would pass while recording nothing; the
+   workflow asserts a 2xx to catch that. Following redirects would not help
+   either: `curl` drops the `Authorization` header when one crosses to a
+   different host, so the hop would arrive unauthenticated and 401.
 3. **Scheduler.** [`.github/workflows/poll-grotto.yml`](.github/workflows/poll-grotto.yml)
    polls every 30 min during opening hours. The endpoint self-gates to opening
    hours and stores only `{ time, status }`; sea conditions are reconstructed
