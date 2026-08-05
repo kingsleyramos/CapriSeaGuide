@@ -22,7 +22,13 @@
 
 # misc
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.pem
+
+# editor state
+.vscode/
+.idea/
 
 # debug
 npm-debug.log*
