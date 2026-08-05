@@ -92,12 +92,6 @@ export const GROTTO_HOURS = {
 /** How many past days the Blue Grotto history shows. */
 export const HISTORY_DAYS = 7;
 
-/** How many past days of recorded live status the recorder keeps (2 years).
- *  Deliberately far beyond HISTORY_DAYS, which is all the UI surfaces: the
- *  readings are cheap (~93 B each, ~5k/year) and cannot be backfilled, so the
- *  store is the archive. Two years is ~1 MB against Upstash's 256 MB free tier. */
-export const RETENTION_DAYS = 730;
-
 /**
  * Bands for the grotto's forecast, i.e. the pale part of the live day's bar:
  * today's hours after the last recorded check, and all of tomorrow once today

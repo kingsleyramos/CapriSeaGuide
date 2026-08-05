@@ -4,16 +4,15 @@
  * connection env vars. If those are absent the whole module is inert: writes
  * no-op and reads return [], so the app runs exactly as it does without a store.
  *
- * We store only { time, status } (about 540 entries over 30 days). Sea
- * conditions for any past moment are reconstructed from Open-Meteo, so nothing
- * else needs persisting.
+ * We store only { time, status }; sea conditions for any past moment are
+ * reconstructed from Open-Meteo, so nothing else needs persisting. Readings
+ * never expire -- they cannot be backfilled, and at ~93 bytes and ~5k a year
+ * the whole archive stays a rounding error against the store's capacity.
  */
 
-import { RETENTION_DAYS } from "@/config/tuning";
 import type { GrottoReading } from "@/lib/forecast/types";
 
 const KEY = "grotto:log";
-const DAY_MS = 86_400_000;
 
 // Vercel's Upstash integration exposes KV_* ; a direct Upstash setup uses UPSTASH_*.
 const URL = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
@@ -47,14 +46,10 @@ function parseMember(member: string): GrottoReading | null {
   return { t, status };
 }
 
-/** Append a reading and prune anything older than the retention window. */
+/** Append a reading. The log is never pruned; see the module header. */
 export async function recordReading(reading: GrottoReading): Promise<void> {
   if (!isStoreConfigured()) return;
-  const cutoff = reading.t - RETENTION_DAYS * DAY_MS;
-  await pipeline([
-    ["ZADD", KEY, reading.t, memberOf(reading)],
-    ["ZREMRANGEBYSCORE", KEY, "-inf", `(${cutoff}`],
-  ]);
+  await pipeline([["ZADD", KEY, reading.t, memberOf(reading)]]);
 }
 
 /** Read readings in [fromMs, toMs], oldest first. Resilient: returns [] on any

@@ -169,7 +169,7 @@ history builds up from the day you switch it on.
 3. **Scheduler.** [`.github/workflows/poll-grotto.yml`](.github/workflows/poll-grotto.yml)
    polls every 30 min during opening hours. The endpoint self-gates to opening
    hours and stores only `{ time, status }`; sea conditions are reconstructed
-   from Open-Meteo. It keeps 30 days (`RETENTION_DAYS`) and the card shows the
+   from Open-Meteo. Readings are kept indefinitely; the card shows the
    most recent 7 (`HISTORY_DAYS`).
 
 ## Data & disclaimer
