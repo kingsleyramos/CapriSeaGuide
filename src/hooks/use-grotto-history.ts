@@ -4,16 +4,9 @@ import { useEffect, useState } from "react";
 import { REFRESH } from "@/config/tuning";
 import type { GrottoTimelinePayload } from "@/lib/forecast/grotto-view";
 
-/**
- * Loads the Blue Grotto timeline (today's bar + last-7-day history) and
- * refreshes hourly.
- *
- * `data` is null until the first load resolves. `settled` flips true once that
- * first attempt finishes either way — succeeded or failed — so the report can
- * hold the skeleton until every fetch is in and render the page in one piece
- * (see Report). A failure settles too: the timeline is optional, so a dead
- * endpoint should cost the card its bar, not strand the whole page.
- */
+/** Loads the Blue Grotto timeline (today's bar + last-7-day history) and
+ *  refreshes hourly. `settled` flips once the first attempt finishes, success
+ *  or failure, so a dead endpoint cannot leave the placeholder up forever. */
 export function useGrottoHistory(): { data: GrottoTimelinePayload | null; settled: boolean } {
   const [data, setData] = useState<GrottoTimelinePayload | null>(null);
   const [settled, setSettled] = useState(false);
@@ -31,7 +24,6 @@ export function useGrottoHistory(): { data: GrottoTimelinePayload | null; settle
       } catch {
         /* keep the previous value */
       } finally {
-        // Idempotent: React bails out of the re-render on later refreshes.
         if (active) setSettled(true);
       }
     };

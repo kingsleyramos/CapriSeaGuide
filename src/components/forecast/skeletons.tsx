@@ -3,13 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
- * Placeholders for the cards that cannot render until the forecast lands.
- *
- * Each one mirrors its card element for element, because the goal is height,
- * not decoration: whatever the placeholder reserves is what the real content
- * has to fit into, or the swap shifts the page. So every stand-in sits in the
- * same typographic context as the copy it replaces and lets the browser
- * measure it — see the `text` and `copy` variants in ui/skeleton.
+ * Placeholders for the cards that wait on the forecast. Each mirrors its card
+ * element for element and borrows the same type scale, so the reserved height
+ * matches the real content at any viewport (see the variants in ui/skeleton).
  */
 
 export function NowCardSkeleton() {

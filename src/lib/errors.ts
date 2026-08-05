@@ -1,13 +1,6 @@
-/**
- * Error visibility for the API routes.
- *
- * A route may show a visitor an *authored* message ("the forecast service is
- * briefly down"), but never a raw one: an unexpected throw can carry a file
- * path, an internal hostname or a connection string, and every response here is
- * public. So messages are opt-in rather than opt-out.
- */
-
-/** An error whose message was written for a visitor to read. */
+/** An error whose message was authored for visitors. Routes must never echo a
+ *  raw error message: an unexpected throw can carry paths, hostnames or
+ *  connection strings, and every response here is public. */
 export class PublicError extends Error {
   constructor(message: string) {
     super(message);
@@ -15,11 +8,7 @@ export class PublicError extends Error {
   }
 }
 
-/**
- * The message to return for `error`. Authored messages pass through; anything
- * else is logged server-side and replaced with `fallback`, so a dependency's
- * internals can never reach the client.
- */
+/** Authored messages pass through; anything else is logged and replaced. */
 export function publicMessage(error: unknown, fallback: string): string {
   if (error instanceof PublicError) return error.message;
   console.error("[capri] unexpected error:", error);

@@ -3,15 +3,9 @@ import { Card } from "@/components/ui/card";
 
 const M = COPY.methodology;
 
-/**
- * The "How this page works" panel, rendered from the centralized copy.
- *
- * Every word here is static, so the panel renders on first paint rather than
- * waiting on the forecast -- it is the tallest card on the page, and holding it
- * back bought nothing. `updatedLine` is the one fetched value, a short clause at
- * the very end; until it arrives the sentence simply stops early. Nothing sits
- * below it, so its late arrival cannot move anything.
- */
+/** The "How this page works" panel, rendered from the centralized copy. All
+ *  static, so it paints before the fetches land; `updatedLine` is the one
+ *  fetched value and trails the last sentence, where its arrival shifts nothing. */
 export function Methodology({ updatedLine }: { updatedLine?: string }) {
   return (
     <Card className="p-5">

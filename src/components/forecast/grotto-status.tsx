@@ -257,14 +257,10 @@ function HistoryDayRow({ view }: { view: HistoryDayView }) {
 }
 
 /**
- * Blue Grotto: live status, today's timeline, and the last-7-day history in one
- * card, each filling in as its own fetch lands rather than waiting on the others.
- *
- * The two async regions reserve their space up front, which is what lets them
- * arrive late without moving the page. Both are made of fixed-height rows -- a
- * legend, an axis, a 22px bar, a label line -- so the reservation holds at any
- * viewport, unlike a guessed pixel height. `settled` says the fetch has finished
- * one way or the other; a failure keeps the placeholder from lingering forever.
+ * Blue Grotto: live status, today's timeline, and the last-7-day history in
+ * one card, each filling in as its own fetch lands. The placeholders are built
+ * from the same fixed-height rows as the real content so the reservation holds
+ * at any viewport; the `settled` flags stop them lingering after a failed fetch.
  */
 export function GrottoStatus({
   view,
@@ -285,10 +281,8 @@ export function GrottoStatus({
       {/* Live status — unchanged from the standalone bar. */}
       <div className="flex flex-wrap items-center justify-between gap-3.5 px-5 py-4">
         <div className="flex flex-wrap items-center gap-3">
-          {/* The chip keeps its natural width: pinning it to fit the longest
-              label padded short ones like "Closed" out of proportion. The
-              placeholder is sized by a real label instead, so the swap moves
-              the title by a few pixels at most. */}
+          {/* Placeholder is sized by a real label; do not pin the chip's width
+              to prevent the small swap shift -- it distorts short labels. */}
           {liveSettled ? (
             <GrottoChip tone={view.tone}>{view.label}</GrottoChip>
           ) : (
@@ -311,14 +305,13 @@ export function GrottoStatus({
         </a>
       </div>
 
-      {/* Today's timeline: reported so far + forecast. The legend and axis need
-          no data, so they paint immediately and only the bar is held back. */}
+      {/* Today's timeline: reported so far + forecast. Legend and axis are
+          static, so only the bar itself waits. */}
       {(!historySettled || timeline?.today) && (
         <div className="px-5 pb-4">
           <Legend />
           <div className="mb-1.5">
-            {/* Axis is a fixed h-4 track, so an empty label set still holds
-                its exact height. */}
+            {/* An empty axis still holds its h-4 track height. */}
             <Axis axis={timeline?.axis ?? []} />
           </div>
           {timeline?.today ? (

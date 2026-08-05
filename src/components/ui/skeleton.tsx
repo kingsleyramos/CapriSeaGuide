@@ -3,16 +3,10 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /**
- * Placeholder for content that has not arrived yet.
- *
- * The variants exist because a placeholder's job is to hold the exact space its
- * content will take, and "exact" means something different for a box than for a
- * line of prose. A pixel height is only ever right at one viewport, so anything
- * standing in for text instead borrows the surrounding type scale and lets the
- * browser do the arithmetic.
- *
- * Always `aria-hidden`: the filler is shape, not content, and `copy` in
- * particular carries real words that a screen reader must not announce.
+ * Placeholder for content that has not arrived yet. Text variants borrow the
+ * surrounding type scale instead of a pixel height, so the reserved space
+ * matches the real content at any viewport. Always aria-hidden: `copy` filler
+ * carries real words a screen reader must not announce.
  */
 const skeletonVariants = cva(
   "select-none bg-surface-muted text-transparent [animation:shimmer_1.4s_ease-in-out_infinite] motion-reduce:animate-none",

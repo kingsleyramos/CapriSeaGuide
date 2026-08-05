@@ -42,8 +42,7 @@ async function fetchJson(url: string): Promise<OpenMeteoResponse> {
     }
     const json = (await res.json()) as OpenMeteoResponse;
     if (json.error) {
-      // `reason` is Open-Meteo's text, not ours. Log it for debugging but do
-      // not hand a third party's string to our own visitors verbatim.
+      // `reason` is Open-Meteo's own text; log it, never relay it to visitors.
       console.error("[capri] open-meteo rejected a request:", json.reason);
       throw new PublicError("The forecast service rejected the request. Try again in a minute.");
     }
