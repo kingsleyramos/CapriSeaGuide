@@ -60,13 +60,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full">
         <StructuredData />
         {children}
-        <footer className="mx-auto max-w-[960px] px-4 pb-6 pt-1 text-center text-[11px] text-ink-faint">
+        {/* ink-mute, not ink-faint: 11px text needs 4.5:1 contrast for WCAG AA
+            (faint is 2.5:1 on white). */}
+        <footer className="mx-auto max-w-[960px] px-4 pb-6 pt-1 text-center text-[11px] text-ink-mute">
           {M.credit}{" "}
           <a
             href={M.creatorUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-ink-faint underline decoration-line underline-offset-2 hover:text-ink-mute"
+            className="font-medium text-ink-mute underline decoration-line underline-offset-2 hover:text-ink-soft"
           >
             {M.creator}
           </a>
