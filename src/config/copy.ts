@@ -15,6 +15,8 @@ import type { VerdictTone } from "./tuning";
 
 export type ConfidenceTone = "high" | "medium" | "low";
 export type GrottoStatus = "open" | "closed" | "unknown";
+/** Live grotto chip states: capri.net's verdict plus an "outside opening hours" state. */
+export type GrottoDisplayTone = "open" | "closed" | "offHours" | "unknown";
 export type SlotTrend = "worse" | "better" | null;
 export type PatternBand = "fallingFast" | "easing" | "building" | "steady";
 
@@ -66,21 +68,70 @@ export const COPY = {
     statusLabel: {
       open: "Open now",
       closed: "Closed now",
+      offHours: "Closed",
       unknown: "Unknown",
-    } satisfies Record<GrottoStatus, string>,
-    statusLine: {
-      open: "Weather can still close it during the day.",
-      closed: "It can reopen the same day.",
+    } satisfies Record<GrottoDisplayTone, string>,
+    line: {
+      open: "The grotto can be visited today, weather permitting. The boatmen make the final call at the cave.",
+      weatherClosed: "Reported closed by sea conditions today. It can reopen the same day.",
+      offHoursBeforeOpen: "Outside opening hours. Opens around 09:00.",
+      offHoursAfterClose: "Closed for the day. Opens again tomorrow around 09:00.",
       unknown: "The live report couldn't be read right now.",
-    } satisfies Record<GrottoStatus, string>,
+    },
+    /** Shown when the live report is unreadable during opening hours. */
+    fallback: (odds: string) =>
+      `Live status unavailable. Our forecast puts it around ${odds} likely closed right now.`,
     /** Shown when we cross-checked more than one source and they disagree. */
     disagreement: "Live sources disagree, so treat this as provisional.",
-    sourcePrefix: "per",
+  },
+
+  /** The Blue Grotto timeline that lives under the live-status row: today's bar
+   *  (reported so far + forecast) and the expandable last-7-days history. */
+  grottoHistory: {
+    /** Row labels for the live day's bar. */
+    today: "Today",
+    tomorrow: "Tomorrow",
+    /** The reported/forecast divider caption, e.g. "reported as of 13:00". */
+    reportedAsOf: (time: string) => `reported as of ${time}`,
+    /** The collapsed history trigger. */
+    historyToggle: "Last 7 days",
+    /** Grid row labels for a no-data day's morning/afternoon sea averages. */
+    slot: { morning: "Morning", afternoon: "Afternoon" },
+    /** Status for a past day the recorder never logged (sea stats still shown). */
+    noData: "No data",
+    /** The axis is generated from the days' opening hours; no fixed labels.
+     *  Expected-open / possible-closure are forecast (pale) tones and only ever
+     *  appear on today/tomorrow's bar, never on the past. */
+    legend: {
+      open: "Open",
+      closed: "Closed",
+      expectedOpen: "Expected open",
+      possibleClosure: "Possible closure",
+      none: "No data",
+    },
+    /** Expanded-grid columns. `mobile: true` also shows on phones; the rest are
+     *  tablet and up. Reorder, relabel, add or drop here. Each `key` must have a
+     *  matching value produced by the history route. */
+    columns: [
+      { key: "waves", label: "Waves", mobile: false },
+      { key: "swell", label: "Swell", mobile: true },
+      { key: "period", label: "Period", mobile: true },
+      { key: "from", label: "From", mobile: true },
+      { key: "wind", label: "Wind", mobile: true },
+      { key: "gusts", label: "Gusts", mobile: false },
+      { key: "modeled", label: "Modeled", mobile: false },
+    ],
+    timeHeading: "Time",
+    statusHeading: "Status",
+    /** Grid status word for a reported open/closed run. */
+    statusWord: { open: "Open", closed: "Closed" },
+    noReport: "No report for this day.",
+    empty: "History isn't available right now.",
   },
 
   today: {
-    morning: { title: "This morning", sub: "9am – 1pm" },
-    afternoon: { title: "This afternoon", sub: "1pm – 6pm" },
+    morning: { title: "This morning", sub: "09:00 – 13:00" },
+    afternoon: { title: "This afternoon", sub: "13:00 – 18:00" },
     topHeading: "Chance of being closed or cancelled",
     topActivityLabels: {
       grotto: "Blue Grotto",
@@ -216,7 +267,7 @@ export const COPY = {
       {
         lead: "The data.",
         body:
-          "Waves, swell height, period and direction come from Open-Meteo's marine models (ECMWF WAM, GWAM, Météo-France and NCEP WaveWatch), blended together. Wind, gusts and pressure come from six forecast models (ECMWF, GFS, ICON, GEM, Météo-France and UKMO) plus ECMWF's 51-member ensemble. All of it is hourly, 7 days out. Morning = the 9am–1pm hours averaged, afternoon = 1pm–6pm. The page re-fetches every hour on its own.",
+          "Waves, swell height, period and direction come from Open-Meteo's marine models (ECMWF WAM, GWAM, Météo-France and NCEP WaveWatch), blended together. Wind, gusts and pressure come from six forecast models (ECMWF, GFS, ICON, GEM, Météo-France and UKMO) plus ECMWF's 51-member ensemble. All of it is hourly, 7 days out. Morning = the 09:00–13:00 hours averaged, afternoon = 13:00–18:00. The page re-fetches every hour on its own.",
       },
       {
         lead: "The percentages.",
@@ -251,9 +302,9 @@ export const COPY = {
     },
     sources: {
       title: "Official sources",
-      intro: "The final call on the grotto is made by the boatmen at the cave mouth around 9am each day.",
+      intro: "The final call on the grotto is made by the boatmen at the cave mouth around 09:00 each day.",
       contacts: [
-        { label: "Motoscafisti, Marina Grande", value: "+39 081 837 5646", note: "(after 9am)" },
+        { label: "Motoscafisti, Marina Grande", value: "+39 081 837 5646", note: "(after 09:00)" },
         { label: "Capri tourist info", value: "+39 081 837 0686", note: "" },
       ],
       links: [

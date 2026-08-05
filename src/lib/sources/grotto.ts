@@ -74,14 +74,15 @@ const SOURCES: GrottoSource[] = [
   { name: "bluegrotto.tours", url: "https://www.bluegrotto.tours/opening-times/", parse: parseBlueGrotto },
 ];
 
-async function readSource(src: GrottoSource): Promise<Status> {
+async function readSource(src: GrottoSource, fresh: boolean): Promise<Status> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(src.url, {
       signal: controller.signal,
       headers: { "user-agent": USER_AGENT },
-      next: { revalidate: REVALIDATE_S },
+      // The recorder needs an uncached read each poll; the live bar can cache.
+      ...(fresh ? { cache: "no-store" as const } : { next: { revalidate: REVALIDATE_S } }),
     });
     if (!res.ok) return "unknown";
     return src.parse(await res.text());
@@ -92,9 +93,9 @@ async function readSource(src: GrottoSource): Promise<Status> {
   }
 }
 
-export async function fetchGrottoStatus(): Promise<GrottoLive> {
+export async function fetchGrottoStatus({ fresh = false } = {}): Promise<GrottoLive> {
   const results = await Promise.all(
-    SOURCES.map(async (s) => ({ name: s.name, status: await readSource(s) })),
+    SOURCES.map(async (s) => ({ name: s.name, status: await readSource(s, fresh) })),
   );
 
   const definitive = results.filter((r) => r.status !== "unknown");

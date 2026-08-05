@@ -129,6 +129,8 @@ export interface NowView {
   updatedLine: string;
   /** "Sunday, 3 August · 09:20 in Capri" */
   capriNowLine: string;
+  /** Our modeled grotto closure probability for the current hour (0-1). */
+  grottoProbNow: number;
 }
 
 export function buildNowView(
@@ -158,6 +160,7 @@ export function buildNowView(
 
   return {
     verdict: verdictView(slot.head),
+    grottoProbNow: cur.probs.grotto,
     tint: nowTintTone(slot.head),
     headline: sailorLine(slot),
     pattern: COPY.patternLine({ band: patternBand(cur.dp), pressHpa: cur.press }),

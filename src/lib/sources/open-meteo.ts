@@ -11,7 +11,7 @@
  * module that knows Open-Meteo's URL shape and column-naming scheme.
  */
 
-import { FORECAST_DAYS, LOCATION, SOURCES } from "@/config/tuning";
+import { FORECAST_DAYS, HISTORY_DAYS, LOCATION, SOURCES } from "@/config/tuning";
 import { mean, std } from "@/lib/forecast/math";
 import type { RawHour, SourceMeta } from "@/lib/forecast/types";
 
@@ -200,18 +200,36 @@ export function normalize(
 
 /* ---------------------------------------------------------------- fetch all */
 
-/** Fetch and normalize all three feeds. Marine and weather are required; the
- *  ensemble is best-effort (its absence only widens confidence a little). */
-export async function fetchSources() {
-  const days = String(FORECAST_DAYS);
+/** Forecast/past window in days. */
+interface Window {
+  forecastDays: number;
+  pastDays: number;
+}
+
+function windowParams({ forecastDays, pastDays }: Window): Record<string, string> {
+  const p: Record<string, string> = { forecast_days: String(forecastDays) };
+  if (pastDays > 0) p.past_days = String(pastDays);
+  return p;
+}
+
+/** Fetch and normalize the feeds for a time window. Marine and weather are
+ *  required; the ensemble is best-effort and can be skipped (history does). */
+async function fetchWindow({
+  forecastDays,
+  pastDays,
+  includeEnsemble,
+}: Window & { includeEnsemble: boolean }) {
+  const win = windowParams({ forecastDays, pastDays });
+  const empty = { hourly: {} } as OpenMeteoResponse;
+
   const marineUrl = buildUrl(MARINE_URL, {
     latitude: String(LOCATION.marine.lat),
     longitude: String(LOCATION.marine.lon),
     hourly:
       "wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_period,swell_wave_direction",
     timezone: LOCATION.timezone,
-    forecast_days: days,
     models: SOURCES.waveModels.join(","),
+    ...win,
   });
   const weatherUrl = buildUrl(FORECAST_URL, {
     latitude: String(LOCATION.island.lat),
@@ -219,8 +237,8 @@ export async function fetchSources() {
     hourly: "wind_speed_10m,wind_direction_10m,wind_gusts_10m,pressure_msl,precipitation",
     wind_speed_unit: "kn",
     timezone: LOCATION.timezone,
-    forecast_days: days,
     models: SOURCES.weatherModels.join(","),
+    ...win,
   });
   const ensembleUrl = buildUrl(ENSEMBLE_URL, {
     latitude: String(LOCATION.island.lat),
@@ -228,16 +246,28 @@ export async function fetchSources() {
     hourly: "wind_speed_10m",
     wind_speed_unit: "kn",
     timezone: LOCATION.timezone,
-    forecast_days: days,
     models: SOURCES.ensembleModel,
+    ...win,
   });
 
   const [marine, weather, ensemble] = await Promise.all([
     fetchJson(marineUrl),
     fetchJson(weatherUrl),
-    // Ensemble is an enrichment; degrade gracefully if it fails.
-    fetchJson(ensembleUrl).catch(() => ({ hourly: {} }) as OpenMeteoResponse),
+    // Ensemble is an enrichment; degrade gracefully, and skip it entirely for history.
+    includeEnsemble ? fetchJson(ensembleUrl).catch(() => empty) : Promise.resolve(empty),
   ]);
 
   return normalize(marine, weather, ensemble);
+}
+
+/** The forward forecast: FORECAST_DAYS ahead, with the ensemble. */
+export function fetchSources() {
+  return fetchWindow({ forecastDays: FORECAST_DAYS, pastDays: 0, includeEnsemble: true });
+}
+
+/** The window for the Blue Grotto timeline: HISTORY_DAYS back plus today and
+ *  tomorrow (tomorrow feeds the "next day" forecast bar once today has closed),
+ *  no ensemble. */
+export function fetchHistory() {
+  return fetchWindow({ forecastDays: 2, pastDays: HISTORY_DAYS, includeEnsemble: false });
 }

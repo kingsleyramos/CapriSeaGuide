@@ -75,6 +75,38 @@ export const GROTTO = {
   ceil: 0.985,
 } as const;
 
+/**
+ * Blue Grotto opening hours (Capri local time), used to tell a weather closure
+ * apart from "it is simply outside opening hours". Seasonal and approximate;
+ * capri.net notes hours "may vary". `open`/`close` are 24h decimal hours.
+ * Summer (Apr–Oct): 09:00 to 17:30. Winter (Nov–Mar): 09:00 to 14:00.
+ */
+export const GROTTO_HOURS = {
+  open: 9,
+  summerClose: 17.5,
+  winterClose: 14,
+  /** 0-indexed months Apr..Oct. */
+  summerMonths: [3, 4, 5, 6, 7, 8, 9],
+} as const;
+
+/** How many past days the Blue Grotto history shows. */
+export const HISTORY_DAYS = 7;
+
+/** How many past days of recorded live status the recorder keeps. We store 30
+ *  but show HISTORY_DAYS; bump HISTORY_DAYS later to surface the rest. */
+export const RETENTION_DAYS = 30;
+
+/**
+ * Bands for the grotto's forecast, i.e. the pale part of the live day's bar:
+ * today's hours after the last recorded check, and all of tomorrow once today
+ * has closed. For each hour, a modelled closure chance at or above
+ * `possibleClosureAt` shows as "possible closure"; below it, "expected open".
+ * We reuse the PILL_BANDS "low" cutoff (0.3) so this pale bar and the activity
+ * pill can never tell different stories. Past days are never forecast this way:
+ * with no recorded call they simply read "No data".
+ */
+export const GROTTO_FORECAST = { possibleClosureAt: 0.3 } as const;
+
 /** Gust term added to every standard activity's closure probability. */
 export const GUST = { midOffset: 8, kOffset: 1, weight: 0.6 } as const;
 

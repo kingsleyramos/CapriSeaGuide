@@ -91,12 +91,15 @@ export function buildSlot(hours: SlotSourceHour[], lead: number): Slot | null {
   };
 }
 
-/** Group engine hours into up to FORECAST_DAYS days with AM/PM slots. */
-export function buildDays(hours: HourPoint[]): DayForecast[] {
+/** Group engine hours into up to `limit` days with AM/PM slots. */
+export function buildDays(
+  hours: HourPoint[],
+  limit: number = FORECAST_DAYS,
+): DayForecast[] {
   const dates: string[] = [];
   for (const h of hours) if (!dates.includes(h.date)) dates.push(h.date);
 
-  return dates.slice(0, FORECAST_DAYS).map((date, lead) => {
+  return dates.slice(0, limit).map((date, lead) => {
     const inDay = hours.filter((h) => h.date === date);
     const inSlot = (slot: readonly number[]) =>
       inDay.filter((h) => slot.includes(h.hour));
