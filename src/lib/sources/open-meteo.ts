@@ -12,6 +12,7 @@
  */
 
 import { FORECAST_DAYS, HISTORY_DAYS, LOCATION, SOURCES } from "@/config/tuning";
+import { PublicError } from "@/lib/errors";
 import { mean, std } from "@/lib/forecast/math";
 import type { RawHour, SourceMeta } from "@/lib/forecast/types";
 
@@ -35,12 +36,17 @@ async function fetchJson(url: string): Promise<OpenMeteoResponse> {
       next: { revalidate: REVALIDATE_S },
     });
     if (!res.ok) {
-      throw new Error(
+      throw new PublicError(
         `The forecast service returned an error (${res.status}). It may be briefly down. Try again in a minute.`,
       );
     }
     const json = (await res.json()) as OpenMeteoResponse;
-    if (json.error) throw new Error(json.reason || "Forecast service error.");
+    if (json.error) {
+      // `reason` is Open-Meteo's text, not ours. Log it for debugging but do
+      // not hand a third party's string to our own visitors verbatim.
+      console.error("[capri] open-meteo rejected a request:", json.reason);
+      throw new PublicError("The forecast service rejected the request. Try again in a minute.");
+    }
     return json;
   } finally {
     clearTimeout(timer);

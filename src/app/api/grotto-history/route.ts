@@ -15,6 +15,7 @@ import type {
   HistoryRow,
   TodayPayload,
 } from "@/lib/forecast/grotto-view";
+import { PublicError, publicMessage } from "@/lib/errors";
 import { compass } from "@/lib/forecast/math";
 import type { HourPoint } from "@/lib/forecast/types";
 import { fetchHistory } from "@/lib/sources/open-meteo";
@@ -61,11 +62,23 @@ const dayLabel = (date: string) =>
     month: "short",
   });
 
-export async function GET() {
+export async function GET(req: Request) {
+  // This route takes no parameters, and being dynamic its CDN cache key
+  // includes the query string -- so `?x=1`, `?x=2`, ... would each miss the
+  // edge cache and cost a function invocation plus a store read. The
+  // prerendered routes are immune (they serve the same cached body whatever
+  // the query), so only this one needs the guard. Reject before any work.
+  if (new URL(req.url).search) {
+    return NextResponse.json(
+      { error: "This endpoint takes no query parameters." },
+      { status: 400 },
+    );
+  }
+
   try {
     const tz = LOCATION.timezone;
     const { raw } = await fetchHistory();
-    if (!raw.length) throw new Error("No history is available right now.");
+    if (!raw.length) throw new PublicError("No history is available right now.");
 
     // Group the hourly sea by Capri-local date (past days + today + tomorrow).
     const hours = buildHours(raw);
@@ -172,7 +185,9 @@ export async function GET() {
       { headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=1800" } },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load history.";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json(
+      { error: publicMessage(error, "Failed to load history.") },
+      { status: 502 },
+    );
   }
 }

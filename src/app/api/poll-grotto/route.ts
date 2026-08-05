@@ -1,10 +1,26 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { publicMessage } from "@/lib/errors";
 import { isWithinGrottoHours } from "@/lib/forecast/grotto-view";
 import { fetchGrottoStatus } from "@/lib/sources/grotto";
 import { isStoreConfigured, recordReading } from "@/lib/store/grotto-log";
 
 /** Never cached: each call records a fresh reading. */
 export const dynamic = "force-dynamic";
+
+/**
+ * Compare the Authorization header against the expected value in constant time.
+ * A plain `!==` returns as soon as two bytes differ, which in principle lets a
+ * caller learn the secret one byte at a time; `timingSafeEqual` always reads
+ * both buffers fully. It throws on a length mismatch, so length is checked
+ * first -- that leaks the secret's length, never its contents.
+ */
+function authorized(header: string | null, secret: string): boolean {
+  if (!header) return false;
+  const expected = Buffer.from(`Bearer ${secret}`);
+  const actual = Buffer.from(header);
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
 
 /**
  * Records one live Blue Grotto reading. Called by the scheduler (a GitHub
@@ -26,7 +42,7 @@ export async function POST(req: Request) {
   if (isStoreConfigured() && process.env.NODE_ENV === "production" && !secret) {
     return NextResponse.json({ error: "server misconfigured" }, { status: 500 });
   }
-  if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (secret && !authorized(req.headers.get("authorization"), secret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -43,7 +59,9 @@ export async function POST(req: Request) {
     await recordReading({ t: now.getTime(), status: live.status });
     return NextResponse.json({ recorded: live.status, at: now.getTime() });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "poll failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: publicMessage(error, "poll failed") },
+      { status: 500 },
+    );
   }
 }
