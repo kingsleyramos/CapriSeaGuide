@@ -10,14 +10,19 @@ import type { NextConfig } from "next";
  * already sends it.
  */
 const isDev = process.env.NODE_ENV === "development";
+// Vercel injects its toolbar (vercel.live) into preview deployments only;
+// without this allowance the CSP blocks it. Production stays 'self'.
+const isPreview = process.env.VERCEL_ENV === "preview";
+const live = isPreview ? " https://vercel.live" : "";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}${live}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  "connect-src 'self'",
+  `connect-src 'self'${live}`,
+  ...(isPreview ? ["frame-src https://vercel.live"] : []),
   "frame-ancestors 'none'",
   "form-action 'self'",
   "base-uri 'none'",
