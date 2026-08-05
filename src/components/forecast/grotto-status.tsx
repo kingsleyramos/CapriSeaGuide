@@ -2,16 +2,15 @@
 
 import { ChevronDown } from "lucide-react";
 import { COPY } from "@/config/copy";
-import {
-  buildGrottoTimeline,
-  type BarTone,
-  type GrottoView,
-  type HistoryAxisLabel,
-  type HistoryDayView,
-  type TimelineBarSegment,
-  type TodayView,
+import type {
+  BarTone,
+  GrottoTimelineView,
+  GrottoView,
+  HistoryAxisLabel,
+  HistoryDayView,
+  TimelineBarSegment,
+  TodayView,
 } from "@/lib/forecast/grotto-view";
-import { useGrottoHistory } from "@/hooks/use-grotto-history";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { GrottoChip } from "@/components/ui/chip";
@@ -259,13 +258,20 @@ function HistoryDayRow({ view }: { view: HistoryDayView }) {
 /**
  * Blue Grotto: live status, today's timeline, and the last-7-day history in one
  * card. The status row keeps its original styling; the bar and history are added
- * below it. `view` is the resolved live status (see buildGrottoView).
+ * below it. `view` is the resolved live status (see buildGrottoView); `timeline`
+ * is null only when the history fetch failed, and the card then renders the
+ * status row alone. Both arrive from Report, which fetches everything and holds
+ * the skeleton until it can render the whole page at once.
  */
-export function GrottoStatus({ view }: { view: GrottoView }) {
+export function GrottoStatus({
+  view,
+  timeline,
+}: {
+  view: GrottoView;
+  timeline: GrottoTimelineView | null;
+}) {
   const c = COPY.grottoBar;
   const s = COPY.grottoHistory;
-  const data = useGrottoHistory();
-  const timeline = data ? buildGrottoTimeline(data) : null;
 
   return (
     <Card className="overflow-hidden">
