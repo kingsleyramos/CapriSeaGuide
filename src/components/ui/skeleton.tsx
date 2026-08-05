@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * carries real words a screen reader must not announce.
  */
 const skeletonVariants = cva(
-  "select-none bg-surface-muted text-transparent [animation:shimmer_1.4s_ease-in-out_infinite] motion-reduce:animate-none",
+  "select-none bg-surface-muted text-transparent animate-pulse motion-reduce:animate-none",
   {
     variants: {
       variant: {
