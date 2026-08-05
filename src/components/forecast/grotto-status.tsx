@@ -151,13 +151,10 @@ function TodayRow({ today }: { today: TodayView }) {
         <span className={CHEVRON_COL} />
       </div>
 
-      {/* The row is always laid out, even with no reading to label, so the bar's
-          block is a constant height. Otherwise the first recorded call of the
-          day would add a line and nudge every card below it. */}
-      <div className="mt-1 flex items-center gap-3">
-        <span className={GUTTER} />
-        <div className="relative h-3.5 flex-1">
-          {today.dividerLabel && today.dividerPct != null ? (
+      {today.dividerLabel && today.dividerPct != null && (
+        <div className="mt-1 flex items-center gap-3">
+          <span className={GUTTER} />
+          <div className="relative h-3.5 flex-1">
             <span
               className="absolute top-0 whitespace-nowrap text-[10px] text-ink-mute"
               style={{
@@ -172,10 +169,10 @@ function TodayRow({ today }: { today: TodayView }) {
             >
               {today.dividerLabel}
             </span>
-          ) : null}
+          </div>
+          <span className={CHEVRON_COL} />
         </div>
-        <span className={CHEVRON_COL} />
-      </div>
+      )}
     </>
   );
 }
@@ -282,22 +279,20 @@ export function GrottoStatus({
 }) {
   const c = COPY.grottoBar;
   const s = COPY.grottoHistory;
-  // The chip's width tracks its label ("Open now" / "Closed" / "Unknown"), so a
-  // late swap would shove the title sideways. A floor wide enough for the
-  // longest label pins it; the placeholder uses the same floor.
-  const chipFloor = "min-w-[124px] justify-center";
 
   return (
     <Card className="overflow-hidden">
       {/* Live status — unchanged from the standalone bar. */}
       <div className="flex flex-wrap items-center justify-between gap-3.5 px-5 py-4">
         <div className="flex flex-wrap items-center gap-3">
+          {/* The chip keeps its natural width: pinning it to fit the longest
+              label padded short ones like "Closed" out of proportion. The
+              placeholder is sized by a real label instead, so the swap moves
+              the title by a few pixels at most. */}
           {liveSettled ? (
-            <GrottoChip tone={view.tone} className={chipFloor}>
-              {view.label}
-            </GrottoChip>
+            <GrottoChip tone={view.tone}>{view.label}</GrottoChip>
           ) : (
-            <Skeleton variant="pill" className={chipFloor} />
+            <Skeleton variant="pill">{c.statusLabel.unknown}</Skeleton>
           )}
           <div>
             <div className="text-[15px] font-bold text-ink">{c.title}</div>
@@ -337,10 +332,6 @@ export function GrottoStatus({
                 <Skeleton variant="block" className="h-[22px] flex-1 rounded-md border border-line" />
                 <span className={CHEVRON_COL} />
               </div>
-              {/* h-4, not h-3.5: the real divider row is a flex line whose
-                  height is set by the chevron column beside it, not by the
-                  label. Two pixels out here is two pixels of shift. */}
-              <div className="mt-1 h-4" />
             </>
           )}
         </div>
