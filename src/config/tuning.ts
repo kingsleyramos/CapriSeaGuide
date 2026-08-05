@@ -97,11 +97,13 @@ export const HISTORY_DAYS = 7;
 export const RETENTION_DAYS = 30;
 
 /**
- * Grotto *forecast* timeline bands (the pale bars: today's remaining hours and
- * any day the recorder hasn't logged). Hourly closure odds at or above
- * `possibleClosureAt` read as "possible closure"; below, "expected open". Set to
- * the PILL_BANDS "low" boundary so the pale timeline and the activity pill can
- * never disagree. Never applied to reported (solid) data.
+ * Bands for the grotto's forecast, i.e. the pale part of the live day's bar:
+ * today's hours after the last recorded check, and all of tomorrow once today
+ * has closed. For each hour, a modelled closure chance at or above
+ * `possibleClosureAt` shows as "possible closure"; below it, "expected open".
+ * We reuse the PILL_BANDS "low" cutoff (0.3) so this pale bar and the activity
+ * pill can never tell different stories. Past days are never forecast this way:
+ * with no recorded call they simply read "No data".
  */
 export const GROTTO_FORECAST = { possibleClosureAt: 0.3 } as const;
 

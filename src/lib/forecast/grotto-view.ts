@@ -186,11 +186,11 @@ function axisLabels(closeMin: number): HistoryAxisLabel[] {
 }
 
 /**
- * Turn the timeline payload into render models. The scale is the latest close
- * among the live day and the history days shown, so every bar fills to its own
- * close and shorter (winter) days render proportionally shorter, rescaling as
- * the window slides. Grid rows are formatted by the route and pass straight
- * through.
+ * Turn the timeline payload into what the component renders. Every bar is drawn
+ * against one shared scale: the latest closing time among the days shown. So
+ * each bar fills right up to its own close, a shorter winter day looks
+ * proportionally shorter, and the scale re-fits as older days drop off the end.
+ * Grid rows are already formatted by the route, so they pass straight through.
  */
 export function buildGrottoTimeline(payload: GrottoTimelinePayload): GrottoTimelineView {
   const C = COPY.grottoHistory;

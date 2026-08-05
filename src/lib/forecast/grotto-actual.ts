@@ -1,14 +1,14 @@
 /**
- * Turns the recorder's raw reading series into open/closed *segments* for one
- * day: contiguous runs of the same status, spanning opening hours. A day that
- * stayed open is one segment; one that closed and reopened is three; two
- * closures is five. Segment widths are durations, so the timeline handles any
- * number without a ragged grid.
+ * Turns the recorder's list of readings into open/closed *segments* for one day
+ * (a segment is a stretch of time with the same status). A day that stayed open
+ * is one segment; one that closed and reopened is three; a second closure makes
+ * five. A segment's width is simply how long it lasted, so the bar can show any
+ * number of these stretches.
  *
- * Only readings inside opening hours exist (the poller no-ops otherwise), so a
- * status change between consecutive readings is a genuine weather flip, not the
- * scheduled daily open/close. Times are at the poll resolution (~30 min), and
- * the day is bounded by its season's close (see GROTTO_HOURS).
+ * The poller only runs during opening hours, so every reading falls inside them.
+ * That means a status change from one reading to the next is a real weather flip,
+ * not the normal daily open/close. Readings arrive about every 30 minutes, and
+ * each day is capped at its season's closing time (see GROTTO_HOURS).
  */
 
 import { GROTTO_FORECAST, GROTTO_HOURS, LOCATION } from "@/config/tuning";
@@ -109,11 +109,11 @@ const modeledTone = (grotto: number): ModeledTone =>
   grotto >= GROTTO_FORECAST.possibleClosureAt ? "possibleClosure" : "expectedOpen";
 
 /**
- * Forecast a day's timeline from the model's hourly closure odds: the pale bars
- * for days the recorder hasn't logged, and the remaining hours of today after
- * the last check. Each hour is banded into expected-open / possible-closure (see
- * GROTTO_FORECAST). `fromMin` starts the forecast partway through the day (the
- * last-check time on the today bar); it defaults to opening.
+ * Build the pale forecast bars for the live day from the model's hourly closure
+ * odds. Used for today's hours after the last recorded check, and for all of
+ * tomorrow once today has closed. Each hour becomes "expected open" or "possible
+ * closure" using the GROTTO_FORECAST cutoff. `fromMin` lets the forecast begin
+ * partway through the day (at the last-check time); it defaults to opening time.
  */
 export function modeledSegments(
   dayHours: { hour: number; grotto: number }[],
