@@ -22,6 +22,11 @@ on:
     - cron: "*/30 7-15 * * *"
   workflow_dispatch: {}
 
+# This job only makes one outbound curl; it never touches the repo, so it is
+# handed no GITHUB_TOKEN at all. Declared here rather than relying on the
+# repository default, which a later settings change could widen.
+permissions: {}
+
 # Don't pile up runs if one is slow.
 concurrency:
   group: poll-grotto

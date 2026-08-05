@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# machine-local agent settings (tool permissions, etc.) - never shared
+.claude/settings.local.json
