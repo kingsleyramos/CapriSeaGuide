@@ -30,9 +30,33 @@ export const SUMMARY_THRESHOLDS = {
 
 export const COPY = {
   meta: {
-    title: "Capri Sea Tours: Reliability Forecast",
+    /** Brand / site name. */
+    name: "Capri Sea Guide",
+    /** The <title> tag: brand plus what the site actually answers. */
+    title: "Capri Sea Guide: Blue Grotto, Boat Tours & Ferries",
     description:
-      "Will Capri's boat tours, the Blue Grotto and the ferries run today? An hourly, 7-day marine reliability forecast built from a multi-model weather ensemble.",
+      "Will Capri's Blue Grotto, island boat tours and the Naples & Sorrento ferries run today? An hourly, 7-day marine reliability forecast built from a multi-model weather ensemble.",
+    /** Canonical origin (also drives Open Graph, sitemap, robots, JSON-LD). */
+    url: "https://capriseaguide.com",
+    locale: "en_US",
+    keywords: [
+      "Capri",
+      "Blue Grotto",
+      "Grotta Azzurra",
+      "Capri boat tours",
+      "Capri ferry",
+      "Capri sea conditions",
+      "Blue Grotto open today",
+      "Capri weather",
+      "Capri marine forecast",
+      "Amalfi Coast ferry",
+    ],
+    ogImageAlt:
+      "Capri Sea Guide: will the Blue Grotto, boat tours and ferries run today?",
+    /** Footer credit + JSON-LD author. */
+    credit: "Created by",
+    creator: "Kingsley Ramos",
+    creatorUrl: "https://kingsleyramos.dev",
   },
 
   states: {

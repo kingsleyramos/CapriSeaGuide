@@ -1,4 +1,4 @@
-# Capri Sea Tours: Reliability Forecast
+# Capri Sea Guide
 
 An hourly, 7-day marine **reliability** forecast for Capri: the odds that each
 sea activity (Blue Grotto entry, island boat tours, the Amalfi/Naples ferries,

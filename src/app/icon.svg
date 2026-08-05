@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Capri Sea Guide">
+  <rect width="512" height="512" rx="115" fill="#0b6aa9"/>
+  <circle cx="256" cy="176" r="62" fill="#ffd66b"/>
+  <path d="M48 342 q52 -62 104 0 t104 0 t104 0" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round"/>
+  <path d="M48 410 q52 -62 104 0 t104 0 t104 0" fill="none" stroke="#bfe3f7" stroke-width="44" stroke-linecap="round"/>
+</svg>
