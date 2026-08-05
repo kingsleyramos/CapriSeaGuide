@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveSegments, estimateSegments } from "./grotto-actual";
+import { deriveSegments, modeledSegments } from "./grotto-actual";
 import type { GrottoReading } from "./types";
 
 const TZ = "Europe/Rome";
@@ -30,6 +30,18 @@ describe("deriveSegments", () => {
     expect(segs[2].end).toBe("17:30");
   });
 
+  it("bounds the last run at dayEndMin (today's last check) instead of close", () => {
+    const readings = [
+      r("2026-08-04T07:00:00Z", "open"), // 09:00
+      r("2026-08-04T09:30:00Z", "closed"), // 11:30
+    ];
+    // Last check at 13:00 (780 min): the closed run ends there, not at 17:30.
+    const segs = deriveSegments(readings, "2026-08-04", TZ, 780);
+    expect(segs.map((s) => s.status)).toEqual(["open", "closed"]);
+    expect(segs[1].start).toBe("11:30");
+    expect(segs[1].end).toBe("13:00");
+  });
+
   it("returns one segment for a steady day", () => {
     const readings = [
       r("2026-08-04T07:00:00Z", "open"),
@@ -55,20 +67,29 @@ describe("deriveSegments", () => {
   });
 });
 
-describe("estimateSegments", () => {
-  it("thresholds hourly model odds into open/closed segments", () => {
-    // Low odds all day except a rough midday (12:00-14:00) that reads closed.
+describe("modeledSegments", () => {
+  it("bands hourly model odds into expected-open / possible-closure", () => {
+    // Low odds all day except a rough midday (12:00-14:00) over the 0.3 band.
     const hours = Array.from({ length: 24 }, (_, hour) => ({
       hour,
       grotto: hour >= 12 && hour < 14 ? 0.8 : 0.1,
     }));
-    const segs = estimateSegments(hours, "2026-08-04");
-    expect(segs.map((s) => s.status)).toEqual(["open", "closed", "open"]);
+    const segs = modeledSegments(hours, "2026-08-04");
+    expect(segs.map((s) => s.tone)).toEqual(["expectedOpen", "possibleClosure", "expectedOpen"]);
     expect(segs[0].start).toBe("09:00");
     expect(segs[segs.length - 1].end).toBe("17:30");
   });
 
+  it("starts the forecast at fromMin (today's last check)", () => {
+    const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, grotto: 0.1 }));
+    const segs = modeledSegments(hours, "2026-08-04", { fromMin: 780 }); // 13:00
+    expect(segs).toHaveLength(1);
+    expect(segs[0].tone).toBe("expectedOpen");
+    expect(segs[0].start).toBe("13:00");
+    expect(segs[0].end).toBe("17:30");
+  });
+
   it("returns nothing when there are no hours in the opening window", () => {
-    expect(estimateSegments([], "2026-08-04")).toEqual([]);
+    expect(modeledSegments([], "2026-08-04")).toEqual([]);
   });
 });

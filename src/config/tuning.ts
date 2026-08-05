@@ -96,10 +96,14 @@ export const HISTORY_DAYS = 7;
  *  but show HISTORY_DAYS; bump HISTORY_DAYS later to surface the rest. */
 export const RETENTION_DAYS = 30;
 
-/** Grotto closure odds above which the history's *estimated* timeline reads
- *  "closed" (more likely closed than open). Only used for forecast estimates,
- *  never for reported data. */
-export const HISTORY_ESTIMATE_CLOSED_AT = 0.5;
+/**
+ * Grotto *forecast* timeline bands (the pale bars: today's remaining hours and
+ * any day the recorder hasn't logged). Hourly closure odds at or above
+ * `possibleClosureAt` read as "possible closure"; below, "expected open". Set to
+ * the PILL_BANDS "low" boundary so the pale timeline and the activity pill can
+ * never disagree. Never applied to reported (solid) data.
+ */
+export const GROTTO_FORECAST = { possibleClosureAt: 0.3 } as const;
 
 /** Gust term added to every standard activity's closure probability. */
 export const GUST = { midOffset: 8, kOffset: 1, weight: 0.6 } as const;

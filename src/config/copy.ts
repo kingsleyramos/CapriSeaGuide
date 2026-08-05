@@ -85,14 +85,30 @@ export const COPY = {
     disagreement: "Live sources disagree, so treat this as provisional.",
   },
 
+  /** The Blue Grotto timeline that lives under the live-status row: today's bar
+   *  (reported so far + forecast) and the expandable last-7-days history. */
   grottoHistory: {
-    title: "Blue Grotto, last 7 days",
-    subtitle: "Open and closed through the day, opening hours only.",
-    /** The time axis is generated from the days' opening hours; no fixed labels. */
-    legend: { open: "Open", closed: "Closed", estimated: "Estimated", none: "No report" },
-    /** Solid bars are the boatmen's reported calls; pale bars our forecast estimate. */
-    modelNote:
-      "Solid bars are the boatmen's reported calls; pale bars are our forecast estimate until the recorder is live.",
+    /** Row labels for the live day's bar. */
+    today: "Today",
+    tomorrow: "Tomorrow",
+    /** The reported/forecast divider caption, e.g. "reported as of 13:00". */
+    reportedAsOf: (time: string) => `reported as of ${time}`,
+    /** The collapsed history trigger. */
+    historyToggle: "Last 7 days",
+    /** Grid row labels for a no-data day's morning/afternoon sea averages. */
+    slot: { morning: "Morning", afternoon: "Afternoon" },
+    /** Status for a past day the recorder never logged (sea stats still shown). */
+    noData: "No data",
+    /** The axis is generated from the days' opening hours; no fixed labels.
+     *  Expected-open / possible-closure are forecast (pale) tones and only ever
+     *  appear on today/tomorrow's bar, never on the past. */
+    legend: {
+      open: "Open",
+      closed: "Closed",
+      expectedOpen: "Expected open",
+      possibleClosure: "Possible closure",
+      none: "No data",
+    },
     /** Expanded-grid columns. `mobile: true` also shows on phones; the rest are
      *  tablet and up. Reorder, relabel, add or drop here. Each `key` must have a
      *  matching value produced by the history route. */
@@ -107,6 +123,7 @@ export const COPY = {
     ],
     timeHeading: "Time",
     statusHeading: "Status",
+    /** Grid status word for a reported open/closed run. */
     statusWord: { open: "Open", closed: "Closed" },
     noReport: "No report for this day.",
     empty: "History isn't available right now.",

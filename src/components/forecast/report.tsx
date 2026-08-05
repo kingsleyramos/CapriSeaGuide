@@ -7,8 +7,7 @@ import { buildNowView, buildTodayCards } from "@/lib/forecast/view";
 import { useForecast } from "@/hooks/use-forecast";
 import { useGrotto } from "@/hooks/use-grotto";
 import { useNow } from "@/hooks/use-now";
-import { GrottoBar } from "./grotto-bar";
-import { GrottoHistory } from "./grotto-history";
+import { GrottoStatus } from "./grotto-status";
 import { Methodology } from "./methodology";
 import { NowCard } from "./now-card";
 import { SevenDay } from "./seven-day";
@@ -40,10 +39,9 @@ export function Report() {
   return (
     <div className="grid gap-3.5">
       <NowCard now={nowView} />
-      <GrottoBar view={grottoView} />
+      <GrottoStatus view={grottoView} />
       <TodayCards cards={todayCards} />
       <SevenDay days={report.days} />
-      <GrottoHistory />
       <Methodology updatedLine={nowView.updatedLine} />
     </div>
   );

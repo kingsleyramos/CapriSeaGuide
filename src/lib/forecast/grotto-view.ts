@@ -83,66 +83,98 @@ export function buildGrottoView({
   };
 }
 
-/* --------------------------------------- 7-day history (timeline + grid) */
+/* ------------------------------------- grotto timeline (today bar + history) */
 
-/** One open/closed segment of a day, with the sea behind it. Produced by the
- *  history route (reported from readings, or estimated from the model). */
-export interface HistorySegment {
+/** A reported (solid) tone, or a forecast (pale) tone. Forecast tones only ever
+ *  appear on the live day's bar, never on the past. */
+export type SegmentTone = "open" | "closed" | "expectedOpen" | "possibleClosure";
+/** A bar run's fill: a segment tone, or "none" for a no-data (grey) day. */
+export type BarTone = SegmentTone | "none";
+
+/** One run of a timeline bar. The route sizes runs in minutes; the view turns
+ *  those into widths against the shared scale. */
+export interface BarSegment {
   startMin: number;
   endMin: number;
-  start: string; // "09:00"
-  end: string; // "11:30"
-  status: "open" | "closed";
-  /** Time shown on the bar at this boundary; null for the first segment, and
-   *  for every estimated segment (those are guesses at hour resolution). */
-  transitionLabel: string | null;
+  tone: BarTone;
+  /** Time shown on the bar at a reported transition; null otherwise. */
+  label: string | null;
+}
+
+/** One row of an expanded history day's grid: a reported open/closed run (with
+ *  the sea at that change) or a morning/afternoon slot average on a no-data day. */
+export interface HistoryRow {
+  time: string; // "11:30–17:30", or "Morning" / "Afternoon"
+  statusLabel: string; // "Open" / "Closed" / "No data"
+  tone: BarTone;
   cells: Record<string, string>;
 }
+
+/** The live day: reported so far (solid), then forecast to close (pale). */
+export interface TodayPayload {
+  date: string;
+  label: string; // "Today" | "Tomorrow"
+  bar: BarSegment[];
+  /** Reported/forecast divider (minutes from midnight); null when all forecast. */
+  lastCheckMin: number | null;
+  lastCheckLabel: string | null; // "13:00"
+}
+
 export interface HistoryDayPayload {
   date: string;
   label: string; // "Mon 3 Aug"
-  /** "reported" = boatmen's call, "estimated" = forecast, "none" = no data. */
-  kind: "reported" | "estimated" | "none";
-  segments: HistorySegment[];
+  /** "reported" = boatmen's calls; "none" = no recorded status (sea stats only). */
+  kind: "reported" | "none";
+  bar: BarSegment[];
+  rows: HistoryRow[];
 }
 
-export interface HistoryBarSegment {
+/** The payload the history route returns and the hook fetches. */
+export interface GrottoTimelinePayload {
+  today: TodayPayload | null;
+  days: HistoryDayPayload[];
+}
+
+export interface TimelineBarSegment {
   widthPct: number;
-  status: "open" | "closed" | "none";
+  tone: BarTone;
   label: string | null;
 }
-export interface HistoryGridRow {
-  time: string;
-  statusLabel: string;
-  statusKind: "open" | "closed";
-  cells: Record<string, string>;
+export interface TodayView {
+  date: string;
+  label: string;
+  bar: TimelineBarSegment[];
+  /** Position (%) of the reported/forecast divider; null when all forecast. */
+  dividerPct: number | null;
+  dividerLabel: string | null; // "reported as of 13:00"
 }
 export interface HistoryDayView {
   date: string;
   label: string;
-  kind: "reported" | "estimated" | "none";
-  bar: HistoryBarSegment[];
-  rows: HistoryGridRow[];
+  kind: "reported" | "none";
+  bar: TimelineBarSegment[];
+  rows: HistoryRow[];
 }
 export interface HistoryAxisLabel {
   label: string;
   pct: number;
 }
-export interface HistoryView {
+export interface GrottoTimelineView {
+  today: TodayView | null;
   days: HistoryDayView[];
   axis: HistoryAxisLabel[];
 }
 
 const AXIS_MIN = GROTTO_HOURS.open * 60;
 
+const hhmm = (min: number) =>
+  `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+
 /** Seasonal close (minutes from midnight) for a date. */
 const closeMinForDate = (date: string) =>
   ((GROTTO_HOURS.summerMonths as readonly number[]).includes(Number(date.slice(5, 7)) - 1)
     ? GROTTO_HOURS.summerClose
     : GROTTO_HOURS.winterClose) * 60;
-
-const hhmm = (min: number) =>
-  `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 
 /** Axis ticks from opening to the latest close shown: 09:00, every third hour, then the close. */
 function axisLabels(closeMin: number): HistoryAxisLabel[] {
@@ -153,45 +185,52 @@ function axisLabels(closeMin: number): HistoryAxisLabel[] {
   return marks.map((m) => ({ label: hhmm(m), pct: ((m - AXIS_MIN) / span) * 100 }));
 }
 
-/** Turn the history payload into render models. The scale is the latest close
- *  among the days shown, so each bar fills to its own close and shorter days
- *  render proportionally shorter (rescaling as the window slides). */
-export function buildHistoryView(days: HistoryDayPayload[]): HistoryView {
+/**
+ * Turn the timeline payload into render models. The scale is the latest close
+ * among the live day and the history days shown, so every bar fills to its own
+ * close and shorter (winter) days render proportionally shorter, rescaling as
+ * the window slides. Grid rows are formatted by the route and pass straight
+ * through.
+ */
+export function buildGrottoTimeline(payload: GrottoTimelinePayload): GrottoTimelineView {
   const C = COPY.grottoHistory;
-  const maxCloseMin = days.length
-    ? Math.max(...days.map((d) => closeMinForDate(d.date)))
+  const dates = [
+    ...(payload.today ? [payload.today.date] : []),
+    ...payload.days.map((d) => d.date),
+  ];
+  const maxCloseMin = dates.length
+    ? Math.max(...dates.map(closeMinForDate))
     : GROTTO_HOURS.summerClose * 60;
   const span = Math.max(1, maxCloseMin - AXIS_MIN);
   const widthOf = (fromMin: number, toMin: number) =>
     Math.max(0, ((toMin - fromMin) / span) * 100);
 
-  const views: HistoryDayView[] = days.map((day) => {
-    if (day.kind === "none" || !day.segments.length) {
-      return {
-        date: day.date,
-        label: day.label,
-        kind: "none",
-        bar: [{ widthPct: widthOf(AXIS_MIN, closeMinForDate(day.date)), status: "none", label: null }],
-        rows: [],
-      };
-    }
-    return {
-      date: day.date,
-      label: day.label,
-      kind: day.kind,
-      bar: day.segments.map((s) => ({
-        widthPct: widthOf(s.startMin, s.endMin),
-        status: s.status,
-        label: s.transitionLabel,
-      })),
-      rows: day.segments.map((s) => ({
-        time: `${s.start}–${s.end}`,
-        statusLabel: C.statusWord[s.status],
-        statusKind: s.status,
-        cells: s.cells,
-      })),
-    };
-  });
+  const toBar = (segs: BarSegment[]): TimelineBarSegment[] =>
+    segs.map((s) => ({ widthPct: widthOf(s.startMin, s.endMin), tone: s.tone, label: s.label }));
 
-  return { days: views, axis: axisLabels(maxCloseMin) };
+  const today: TodayView | null = payload.today
+    ? {
+        date: payload.today.date,
+        label: payload.today.label,
+        bar: toBar(payload.today.bar),
+        dividerPct:
+          payload.today.lastCheckMin != null
+            ? widthOf(AXIS_MIN, payload.today.lastCheckMin)
+            : null,
+        dividerLabel:
+          payload.today.lastCheckLabel != null
+            ? C.reportedAsOf(payload.today.lastCheckLabel)
+            : null,
+      }
+    : null;
+
+  const days: HistoryDayView[] = payload.days.map((day) => ({
+    date: day.date,
+    label: day.label,
+    kind: day.kind,
+    bar: toBar(day.bar),
+    rows: day.rows,
+  }));
+
+  return { today, days, axis: axisLabels(maxCloseMin) };
 }

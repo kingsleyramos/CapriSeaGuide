@@ -265,7 +265,9 @@ export function fetchSources() {
   return fetchWindow({ forecastDays: FORECAST_DAYS, pastDays: 0, includeEnsemble: true });
 }
 
-/** The past window for the Blue Grotto history: HISTORY_DAYS back, no ensemble. */
+/** The window for the Blue Grotto timeline: HISTORY_DAYS back plus today and
+ *  tomorrow (tomorrow feeds the "next day" forecast bar once today has closed),
+ *  no ensemble. */
 export function fetchHistory() {
-  return fetchWindow({ forecastDays: 1, pastDays: HISTORY_DAYS, includeEnsemble: false });
+  return fetchWindow({ forecastDays: 2, pastDays: HISTORY_DAYS, includeEnsemble: false });
 }
