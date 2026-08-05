@@ -35,7 +35,7 @@ export const COPY = {
     /** The <title> tag: brand plus what the site actually answers. */
     title: "Capri Sea Guide: Blue Grotto, Boat Tours & Ferries",
     description:
-      "Will Capri's Blue Grotto, island boat tours and the Naples & Sorrento ferries run today? An hourly, 7-day marine reliability forecast built from a multi-model weather ensemble.",
+      "Sea conditions for Capri: whether the Blue Grotto, boat tours and ferries are likely to run, hour by hour and for the days ahead.",
     /** Canonical origin (also drives Open Graph, sitemap, robots, JSON-LD). */
     url: "https://capriseaguide.com",
     locale: "en_US",
