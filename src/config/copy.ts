@@ -30,9 +30,35 @@ export const SUMMARY_THRESHOLDS = {
 
 export const COPY = {
   meta: {
-    title: "Capri Sea Tours: Reliability Forecast",
+    /** Brand / site name. */
+    name: "Capri Sea Guide",
+    /** The <title> tag: brand plus what the site actually answers. */
+    title: "Capri Sea Guide: Blue Grotto, Boat Tours & Ferries",
     description:
-      "Will Capri's boat tours, the Blue Grotto and the ferries run today? An hourly, 7-day marine reliability forecast built from a multi-model weather ensemble.",
+      "Sea conditions and closure forecasts for Capri, aggregated from several marine sources. Hourly, and for the days ahead.",
+    /** Canonical origin (also drives Open Graph, sitemap, robots, JSON-LD). */
+    url: "https://capriseaguide.com",
+    locale: "en_US",
+    keywords: [
+      "Capri",
+      "Blue Grotto",
+      "Grotta Azzurra",
+      "Capri boat tours",
+      "Capri ferry",
+      "Capri sea conditions",
+      "Blue Grotto open today",
+      "Capri weather",
+      "Capri marine forecast",
+      "Amalfi Coast ferry",
+    ],
+    /** The share card's tagline. Deliberately understated: this is a plain
+     *  summary of the sea reports, not a sales pitch. */
+    tagline: "A simple summary of Capri's sea conditions",
+    ogImageAlt: "Capri Sea Guide: a simple summary of Capri's sea conditions",
+    /** Footer credit + JSON-LD author. */
+    credit: "Created by",
+    creator: "Kingsley Ramos",
+    creatorUrl: "https://kingsleyramos.dev",
   },
 
   states: {
