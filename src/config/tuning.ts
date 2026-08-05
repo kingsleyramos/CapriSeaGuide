@@ -21,8 +21,8 @@ export const LOCATION = {
 
 /** Which local hours count as "morning" and "afternoon" slots. */
 export const SLOT_HOURS = {
-  am: [9, 10, 11, 12],
-  pm: [13, 14, 15, 16, 17],
+  morning: [9, 10, 11, 12],
+  afternoon: [13, 14, 15, 16, 17],
 } as const;
 
 export const FORECAST_DAYS = 7;

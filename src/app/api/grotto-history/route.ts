@@ -63,11 +63,10 @@ const dayLabel = (date: string) =>
   });
 
 export async function GET(req: Request) {
-  // This route takes no parameters, and being dynamic its CDN cache key
-  // includes the query string -- so `?x=1`, `?x=2`, ... would each miss the
-  // edge cache and cost a function invocation plus a store read. The
-  // prerendered routes are immune (they serve the same cached body whatever
-  // the query), so only this one needs the guard. Reject before any work.
+  // Dynamic routes key the CDN cache on the query string, so unique queries
+  // would each cost an invocation plus a store read. This route takes no
+  // parameters; reject any query before doing work. (Prerendered routes are
+  // immune and must not read req.url, which would de-optimize them.)
   if (new URL(req.url).search) {
     return NextResponse.json(
       { error: "This endpoint takes no query parameters." },
@@ -171,8 +170,8 @@ export async function GET(req: Request) {
       const dayClose = closeHourForMonth(monthOf) * 60;
       const bar: BarSegment[] = [{ startMin: openMin, endMin: dayClose, tone: "none", label: null }];
       const slots: { label: string; hours: HourPoint[] }[] = [
-        { label: H.slot.morning, hours: hoursOf(date).filter((h) => (SLOT_HOURS.am as readonly number[]).includes(h.hour)) },
-        { label: H.slot.afternoon, hours: hoursOf(date).filter((h) => (SLOT_HOURS.pm as readonly number[]).includes(h.hour)) },
+        { label: H.slot.morning, hours: hoursOf(date).filter((h) => (SLOT_HOURS.morning as readonly number[]).includes(h.hour)) },
+        { label: H.slot.afternoon, hours: hoursOf(date).filter((h) => (SLOT_HOURS.afternoon as readonly number[]).includes(h.hour)) },
       ];
       const rows: HistoryRow[] = slots
         .filter((s) => s.hours.length)

@@ -13,6 +13,7 @@ import {
   LOCATION,
   NORTHERLY_SAILOR,
   REFRESH,
+  SLOT_HOURS,
   SLOT_DELTA_NOTE,
   WHY_PRESSURE_WARN,
   WHY_SPREAD_WARN,
@@ -180,7 +181,7 @@ export function buildNowView(
 /* -------------------------------------------------------------- today cards */
 
 export interface TodayCardView {
-  key: "am" | "pm";
+  key: "morning" | "afternoon";
   title: string;
   sub: string;
   verdict: VerdictView;
@@ -189,11 +190,51 @@ export interface TodayCardView {
   top: OddsView[];
 }
 
-export function buildTodayCards(today: DayForecast | undefined): TodayCardView[] {
-  if (!today) return [];
+const AFTERNOON_END_HOUR = Math.max(...SLOT_HOURS.afternoon) + 1;
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const isoDate = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+/** Capri wall-clock time for a real instant. */
+const capriWall = (now: Date, timezone: string) =>
+  new Date(now.toLocaleString("en-US", { timeZone: timezone }));
+
+/**
+ * Which day the "today" cards should describe. After the afternoon slot ends
+ * (18:00 Capri) the cards roll to tomorrow -- "This morning" must not label a
+ * morning that is already over. Matching by date rather than taking days[0]
+ * also survives a report cached across midnight, where days[0] is yesterday.
+ */
+export function pickTodayCardsDay(
+  days: DayForecast[],
+  now: Date,
+  timezone: string = LOCATION.timezone,
+): { day: DayForecast; isTomorrow: boolean } | null {
+  const wall = capriWall(now, timezone);
+  const todayDate = isoDate(wall);
+
+  let i = days.findIndex((d) => d.date >= todayDate);
+  if (i === -1) return null;
+  if (days[i].date === todayDate && wall.getHours() >= AFTERNOON_END_HOUR && days[i + 1]) {
+    i += 1;
+  }
+  return { day: days[i], isTomorrow: days[i].date !== todayDate };
+}
+
+export function buildTodayCards(
+  days: DayForecast[],
+  now: Date,
+  timezone: string = LOCATION.timezone,
+): TodayCardView[] {
+  const picked = pickTodayCardsDay(days, now, timezone);
+  if (!picked) return [];
+  const { day: today, isTomorrow } = picked;
   const defs = [
-    { key: "am" as const, ...COPY.today.morning },
-    { key: "pm" as const, ...COPY.today.afternoon },
+    { key: "morning" as const, ...(isTomorrow ? COPY.today.tomorrowMorning : COPY.today.morning) },
+    {
+      key: "afternoon" as const,
+      ...(isTomorrow ? COPY.today.tomorrowAfternoon : COPY.today.afternoon),
+    },
   ];
   const cards: TodayCardView[] = [];
   for (const def of defs) {
@@ -222,10 +263,10 @@ export function buildTodayCards(today: DayForecast | undefined): TodayCardView[]
 export interface DayActivityRow {
   key: ActivityKey;
   name: string;
-  amPct: string;
-  pmPct: string;
-  amTone: PillTone | "none";
-  pmTone: PillTone | "none";
+  morningPct: string;
+  afternoonPct: string;
+  morningTone: PillTone | "none";
+  afternoonTone: PillTone | "none";
 }
 export interface DayNumberRow {
   label: string;
@@ -236,54 +277,66 @@ export interface DayRowView {
   label: string;
   line: string;
   confidence: ConfidenceView;
-  am: VerdictView;
-  pm: VerdictView;
+  morning: VerdictView;
+  afternoon: VerdictView;
   activities: DayActivityRow[];
   numbers: DayNumberRow[];
   why: string;
 }
 
-const dayLabel = (date: string, lead: number) => {
+/** "Today"/"Tomorrow" come from the client clock, not the report's `lead`:
+ *  a report cached across midnight would otherwise label yesterday "Today". */
+const dayLabel = (date: string, now: Date, timezone: string) => {
   const full = new Date(`${date}T12:00:00`).toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
     month: "short",
   });
-  if (lead === 0) return `${COPY.sevenDay.todayPrefix} · ${full}`;
-  if (lead === 1) return `${COPY.sevenDay.tomorrowPrefix} · ${full}`;
+  const wall = capriWall(now, timezone);
+  if (date === isoDate(wall)) return `${COPY.sevenDay.todayPrefix} · ${full}`;
+  wall.setDate(wall.getDate() + 1);
+  if (date === isoDate(wall)) return `${COPY.sevenDay.tomorrowPrefix} · ${full}`;
   return full;
 };
 
 const trend = (day: DayForecast) => {
-  const { am, pm } = day;
-  if (am && pm && pm.head > am.head + SLOT_DELTA_NOTE) return "worse" as const;
-  if (am && pm && am.head > pm.head + SLOT_DELTA_NOTE) return "better" as const;
+  const { morning, afternoon } = day;
+  if (morning && afternoon && afternoon.head > morning.head + SLOT_DELTA_NOTE) {
+    return "worse" as const;
+  }
+  if (morning && afternoon && morning.head > afternoon.head + SLOT_DELTA_NOTE) {
+    return "better" as const;
+  }
   return null;
 };
 
-export function buildDayRow(day: DayForecast): DayRowView | null {
+export function buildDayRow(
+  day: DayForecast,
+  now: Date,
+  timezone: string = LOCATION.timezone,
+): DayRowView | null {
   // A day with hours but none in the AM/PM windows has no summary to build.
   // Open-Meteo returns full local days so this is defensive, not expected.
-  if (!day.am && !day.pm) return null;
-  const s = day.am ?? day.pm!;
+  if (!day.morning && !day.afternoon) return null;
+  const s = day.morning ?? day.afternoon!;
   const L = COPY.sevenDay.numberLabels;
   const pair = (f: (slot: Slot) => string) =>
-    `${day.am ? f(day.am) : "—"} / ${day.pm ? f(day.pm) : "—"}`;
+    `${day.morning ? f(day.morning) : "—"} / ${day.afternoon ? f(day.afternoon) : "—"}`;
 
   return {
     date: day.date,
-    label: dayLabel(day.date, day.lead),
+    label: dayLabel(day.date, now, timezone),
     line: sailorLine(s) + COPY.slotTrendNote(trend(day)),
     confidence: confidenceView(s, day.lead),
-    am: verdictOrDash(day.am),
-    pm: verdictOrDash(day.pm),
+    morning: verdictOrDash(day.morning),
+    afternoon: verdictOrDash(day.afternoon),
     activities: ACTIVITIES.map((a) => ({
       key: a.key,
       name: a.name,
-      amPct: day.am ? pct(day.am.p[a.key]) : "—",
-      pmPct: day.pm ? pct(day.pm.p[a.key]) : "—",
-      amTone: day.am ? pillTone(day.am.p[a.key]) : "none",
-      pmTone: day.pm ? pillTone(day.pm.p[a.key]) : "none",
+      morningPct: day.morning ? pct(day.morning.p[a.key]) : "—",
+      afternoonPct: day.afternoon ? pct(day.afternoon.p[a.key]) : "—",
+      morningTone: day.morning ? pillTone(day.morning.p[a.key]) : "none",
+      afternoonTone: day.afternoon ? pillTone(day.afternoon.p[a.key]) : "none",
     })),
     numbers: [
       { label: L.waves, value: pair((x) => `${x.wave.toFixed(1)} m`) },

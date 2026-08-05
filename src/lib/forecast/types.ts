@@ -59,8 +59,8 @@ export interface DayForecast {
   date: string;
   /** Days from today (0 = today). */
   lead: number;
-  am: Slot | null;
-  pm: Slot | null;
+  morning: Slot | null;
+  afternoon: Slot | null;
 }
 
 /** Compact per-hour payload sent to the client (drops the intermediate std fields). */

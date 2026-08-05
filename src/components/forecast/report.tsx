@@ -33,21 +33,16 @@ export function Report() {
     return <ErrorReport message={error || COPY.states.genericError} onRetry={retry} />;
   }
 
-  // Each region renders as soon as its own data lands rather than the page
-  // waiting on the slowest fetch. What keeps that from shifting the layout is
-  // that every placeholder reserves the space its content will occupy (see
-  // ./skeletons and GrottoStatus): reserving the space is the fix for layout
-  // shift — holding the whole page back until nothing has to move only hides it,
-  // and makes the page only ever as fast as its slowest dependency.
+  // Each region renders as soon as its own fetch lands; the placeholders in
+  // ./skeletons reserve the exact space, which is what keeps the swaps from
+  // shifting the layout.
   const ready = usable(report);
   const nowView = ready
     ? buildNowView(report.hours, report.fetchedAt, now, report.timezone)
     : null;
 
-  // The status line quotes our own odds when the boatmen's verdict is
-  // unreadable, so that one branch genuinely needs the forecast too. Rather
-  // than invent a third state for an unknown-with-no-odds reading, the chip
-  // waits for both — the timeline below it still fills in on its own.
+  // The chip also waits for the forecast: its unknown-verdict line quotes our
+  // own odds, which come from the report.
   const grottoSettled = liveSettled && ready;
   const grottoView = buildGrottoView({
     verdict: live?.status ?? "unknown",
@@ -67,8 +62,12 @@ export function Report() {
         liveSettled={grottoSettled}
         historySettled={historySettled}
       />
-      {ready ? <TodayCards cards={buildTodayCards(report.days[0])} /> : <TodayCardsSkeleton />}
-      {ready ? <SevenDay days={report.days} /> : <SevenDaySkeleton />}
+      {ready ? (
+        <TodayCards cards={buildTodayCards(report.days, now, report.timezone)} />
+      ) : (
+        <TodayCardsSkeleton />
+      )}
+      {ready ? <SevenDay days={report.days} now={now} timezone={report.timezone} /> : <SevenDaySkeleton />}
       <Methodology updatedLine={nowView?.updatedLine} />
     </div>
   );
