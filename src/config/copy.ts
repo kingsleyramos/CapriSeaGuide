@@ -74,8 +74,8 @@ export const COPY = {
     line: {
       open: "The grotto can be visited today, weather permitting. The boatmen make the final call at the cave.",
       weatherClosed: "Reported closed by sea conditions today. It can reopen the same day.",
-      offHoursBeforeOpen: "Outside opening hours. Opens around 9am.",
-      offHoursAfterClose: "Closed for the day. Opens again tomorrow around 9am.",
+      offHoursBeforeOpen: "Outside opening hours. Opens around 09:00.",
+      offHoursAfterClose: "Closed for the day. Opens again tomorrow around 09:00.",
       unknown: "The live report couldn't be read right now.",
     },
     /** Shown when the live report is unreadable during opening hours. */
@@ -88,8 +88,11 @@ export const COPY = {
   grottoHistory: {
     title: "Blue Grotto, last 7 days",
     subtitle: "Open and closed through the day, opening hours only.",
-    /** Labels across the shared 9am to 6pm axis (equal 3-hour steps). */
-    timeAxis: ["9am", "12pm", "3pm", "6pm"],
+    /** The time axis is generated from the days' opening hours; no fixed labels. */
+    legend: { open: "Open", closed: "Closed", estimated: "Estimated", none: "No report" },
+    /** Solid bars are the boatmen's reported calls; pale bars our forecast estimate. */
+    modelNote:
+      "Solid bars are the boatmen's reported calls; pale bars are our forecast estimate until the recorder is live.",
     /** Expanded-grid columns. `mobile: true` also shows on phones; the rest are
      *  tablet and up. Reorder, relabel, add or drop here. Each `key` must have a
      *  matching value produced by the history route. */
@@ -105,17 +108,13 @@ export const COPY = {
     timeHeading: "Time",
     statusHeading: "Status",
     statusWord: { open: "Open", closed: "Closed" },
-    morning: "Morning",
-    afternoon: "Afternoon",
-    noRecord: "No recorded status for this day.",
-    /** Honest label until the recorder has logged real calls. */
-    modelNote: "The percentages are modeled; reported open and closed fills in once the recorder is live.",
+    noReport: "No report for this day.",
     empty: "History isn't available right now.",
   },
 
   today: {
-    morning: { title: "This morning", sub: "9am – 1pm" },
-    afternoon: { title: "This afternoon", sub: "1pm – 6pm" },
+    morning: { title: "This morning", sub: "09:00 – 13:00" },
+    afternoon: { title: "This afternoon", sub: "13:00 – 18:00" },
     topHeading: "Chance of being closed or cancelled",
     topActivityLabels: {
       grotto: "Blue Grotto",
@@ -251,7 +250,7 @@ export const COPY = {
       {
         lead: "The data.",
         body:
-          "Waves, swell height, period and direction come from Open-Meteo's marine models (ECMWF WAM, GWAM, Météo-France and NCEP WaveWatch), blended together. Wind, gusts and pressure come from six forecast models (ECMWF, GFS, ICON, GEM, Météo-France and UKMO) plus ECMWF's 51-member ensemble. All of it is hourly, 7 days out. Morning = the 9am–1pm hours averaged, afternoon = 1pm–6pm. The page re-fetches every hour on its own.",
+          "Waves, swell height, period and direction come from Open-Meteo's marine models (ECMWF WAM, GWAM, Météo-France and NCEP WaveWatch), blended together. Wind, gusts and pressure come from six forecast models (ECMWF, GFS, ICON, GEM, Météo-France and UKMO) plus ECMWF's 51-member ensemble. All of it is hourly, 7 days out. Morning = the 09:00–13:00 hours averaged, afternoon = 13:00–18:00. The page re-fetches every hour on its own.",
       },
       {
         lead: "The percentages.",
@@ -286,9 +285,9 @@ export const COPY = {
     },
     sources: {
       title: "Official sources",
-      intro: "The final call on the grotto is made by the boatmen at the cave mouth around 9am each day.",
+      intro: "The final call on the grotto is made by the boatmen at the cave mouth around 09:00 each day.",
       contacts: [
-        { label: "Motoscafisti, Marina Grande", value: "+39 081 837 5646", note: "(after 9am)" },
+        { label: "Motoscafisti, Marina Grande", value: "+39 081 837 5646", note: "(after 09:00)" },
         { label: "Capri tourist info", value: "+39 081 837 0686", note: "" },
       ],
       links: [

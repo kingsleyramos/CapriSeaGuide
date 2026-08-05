@@ -11,7 +11,7 @@
  * the day is bounded by its season's close (see GROTTO_HOURS).
  */
 
-import { GROTTO_HOURS, LOCATION } from "@/config/tuning";
+import { GROTTO_HOURS, HISTORY_ESTIMATE_CLOSED_AT, LOCATION } from "@/config/tuning";
 import type { GrottoReading } from "./types";
 
 export interface ActualSegment {
@@ -26,7 +26,7 @@ export interface ActualSegment {
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
-const minToHHMM = (min: number) => `${Math.floor(min / 60)}:${pad(min % 60)}`;
+const minToHHMM = (min: number) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
 
 function capriParts(ms: number, timezone: string) {
   const d = new Date(new Date(ms).toLocaleString("en-US", { timeZone: timezone }));
@@ -77,6 +77,52 @@ export function deriveSegments(
       end: minToHHMM(endMin),
       status: run.status,
       hour: i === 0 ? GROTTO_HOURS.open : run.hour,
+    };
+  });
+}
+
+/**
+ * Estimate a day's open/closed segments from the model's hourly closure odds,
+ * for days the recorder hasn't logged. Same shape as deriveSegments, but the
+ * status per hour is thresholded (more-likely-closed-than-open). No transition
+ * times, since it is a guess at hour resolution.
+ */
+export function estimateSegments(
+  dayHours: { hour: number; grotto: number }[],
+  date: string,
+): ActualSegment[] {
+  const month = Number(date.slice(5, 7)) - 1;
+  const openHour = GROTTO_HOURS.open;
+  const closeHour = closeHourForMonth(month);
+  const openMin = openHour * 60;
+  const closeMin = closeHour * 60;
+
+  const inHours = dayHours
+    .filter((h) => h.hour >= openHour && h.hour < closeHour)
+    .sort((a, b) => a.hour - b.hour);
+  if (!inHours.length) return [];
+
+  const statusAt = (g: number): "open" | "closed" =>
+    g > HISTORY_ESTIMATE_CLOSED_AT ? "closed" : "open";
+
+  const runs: { hour: number; status: "open" | "closed" }[] = [];
+  for (const h of inHours) {
+    const s = statusAt(h.grotto);
+    const last = runs[runs.length - 1];
+    if (last && last.status === s) continue;
+    runs.push({ hour: h.hour, status: s });
+  }
+
+  return runs.map((run, i) => {
+    const startMin = i === 0 ? openMin : run.hour * 60;
+    const endMin = i < runs.length - 1 ? runs[i + 1].hour * 60 : closeMin;
+    return {
+      startMin,
+      endMin,
+      start: minToHHMM(startMin),
+      end: minToHHMM(endMin),
+      status: run.status,
+      hour: i === 0 ? openHour : run.hour,
     };
   });
 }

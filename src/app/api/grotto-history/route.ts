@@ -1,16 +1,10 @@
 import { NextResponse } from "next/server";
-import { COPY } from "@/config/copy";
 import { HISTORY_DAYS, LOCATION } from "@/config/tuning";
 import { buildDays, buildHours } from "@/lib/forecast/aggregate";
-import { deriveSegments } from "@/lib/forecast/grotto-actual";
-import type {
-  HistoryDayPayload,
-  HistoryModeledSlot,
-  HistorySegment,
-} from "@/lib/forecast/grotto-view";
+import { deriveSegments, estimateSegments } from "@/lib/forecast/grotto-actual";
+import type { HistoryDayPayload, HistorySegment } from "@/lib/forecast/grotto-view";
 import { compass } from "@/lib/forecast/math";
-import { pillTone } from "@/lib/forecast/model";
-import type { HourPoint, Slot } from "@/lib/forecast/types";
+import type { HourPoint } from "@/lib/forecast/types";
 import { fetchHistory } from "@/lib/sources/open-meteo";
 import { readReadings } from "@/lib/store/grotto-log";
 
@@ -20,27 +14,16 @@ const DAY_MS = 86_400_000;
 // Cache-Control header below (so the store is hit at most once per hour).
 export const dynamic = "force-dynamic";
 
-/** Format one moment's sea into the grid columns (keys match COPY.grottoHistory.columns). */
-type SeaSource = {
-  wave: number;
-  swell: number;
-  per: number;
-  wDir: number;
-  wind: number;
-  gust: number;
-  grotto: number;
-};
-const cellsFrom = (v: SeaSource): Record<string, string> => ({
-  waves: `${v.wave.toFixed(1)} m`,
-  swell: `${v.swell.toFixed(1)} m`,
-  period: `${Math.round(v.per)} s`,
-  from: compass(v.wDir),
-  wind: `${Math.round(v.wind)} kt`,
-  gusts: `${Math.round(v.gust)} kt`,
-  modeled: `${Math.round(v.grotto * 100)}%`,
+/** One hour's sea, formatted for the grid columns (keys match COPY.grottoHistory.columns). */
+const cellsFrom = (h: HourPoint): Record<string, string> => ({
+  waves: `${h.wave.toFixed(1)} m`,
+  swell: `${h.swell.toFixed(1)} m`,
+  period: `${Math.round(h.per)} s`,
+  from: compass(h.wDir),
+  wind: `${Math.round(h.wind)} kt`,
+  gusts: `${Math.round(h.gust)} kt`,
+  modeled: `${Math.round(h.probs.grotto * 100)}%`,
 });
-const hourCells = (h: HourPoint) => cellsFrom({ ...h, grotto: h.probs.grotto });
-const slotCells = (s: Slot) => cellsFrom({ ...s, grotto: s.p.grotto });
 
 const dayLabel = (date: string) =>
   new Date(`${date}T12:00:00`).toLocaleDateString("en-GB", {
@@ -61,38 +44,40 @@ export async function GET() {
 
     const now = Date.now();
     const readings = await readReadings(now - (HISTORY_DAYS + 1) * DAY_MS, now);
-    const C = COPY.grottoHistory;
 
     const payload: HistoryDayPayload[] = days.map((day) => {
-      const segs = readings.length ? deriveSegments(readings, day.date, LOCATION.timezone) : [];
-      const segments: HistorySegment[] | null = segs.length
-        ? segs.map((s, i) => {
-            const h = hours.find((x) => x.date === day.date && x.hour === s.hour);
-            return {
-              startMin: s.startMin,
-              endMin: s.endMin,
-              start: s.start,
-              end: s.end,
-              status: s.status,
-              transitionLabel: i === 0 ? null : s.start,
-              cells: h ? hourCells(h) : {},
-            };
-          })
-        : null;
+      const dayHours = hours.filter((h) => h.date === day.date);
+      const cellsAt = (hour: number): Record<string, string> => {
+        const h = dayHours.find((x) => x.hour === hour);
+        return h ? cellsFrom(h) : {};
+      };
 
-      const modeled: HistoryModeledSlot[] = (
-        [
-          [C.morning, day.am],
-          [C.afternoon, day.pm],
-        ] as const
-      ).map(([label, slot]) => ({
-        label,
-        pct: slot ? `${Math.round(slot.p.grotto * 100)}%` : "—",
-        tone: slot ? pillTone(slot.p.grotto) : "low",
-        cells: slot ? slotCells(slot) : {},
+      // Prefer the boatmen's recorded calls; fall back to a forecast estimate.
+      const reported = readings.length ? deriveSegments(readings, day.date, LOCATION.timezone) : [];
+      const source = reported.length
+        ? reported
+        : estimateSegments(
+            dayHours.map((h) => ({ hour: h.hour, grotto: h.probs.grotto })),
+            day.date,
+          );
+      const kind: HistoryDayPayload["kind"] = reported.length
+        ? "reported"
+        : source.length
+          ? "estimated"
+          : "none";
+
+      const segments: HistorySegment[] = source.map((s, i) => ({
+        startMin: s.startMin,
+        endMin: s.endMin,
+        start: s.start,
+        end: s.end,
+        status: s.status,
+        // Times only on reported bars (estimates are hour-resolution guesses).
+        transitionLabel: kind === "reported" && i > 0 ? s.start : null,
+        cells: cellsAt(s.hour),
       }));
 
-      return { date: day.date, label: dayLabel(day.date), segments, modeled };
+      return { date: day.date, label: dayLabel(day.date), kind, segments };
     });
 
     return NextResponse.json(

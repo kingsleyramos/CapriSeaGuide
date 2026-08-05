@@ -30,7 +30,7 @@ describe("buildGrottoView state model", () => {
   it("treats an out-of-hours closure as off-hours, not weather", () => {
     const before = buildGrottoView({ ...base, verdict: "open", now: at("2026-08-04T05:00:00Z") });
     expect(before.tone).toBe("offHours");
-    expect(before.line).toMatch(/Opens around 9am/);
+    expect(before.line).toMatch(/Opens around 09:00/);
 
     const after = buildGrottoView({ ...base, verdict: "closed", now: at("2026-08-04T18:00:00Z") });
     expect(after.tone).toBe("offHours");
@@ -59,43 +59,37 @@ describe("buildGrottoView state model", () => {
 });
 
 describe("buildHistoryView", () => {
-  it("renders recorded segments as a bar and grid rows", () => {
+  it("renders segments as a bar and grid, scaled to the latest close shown", () => {
     const payload: HistoryDayPayload[] = [
       {
         date: "2026-08-04",
         label: "Tue 4 Aug",
+        kind: "reported",
         segments: [
-          { startMin: 540, endMin: 690, start: "9:00", end: "11:30", status: "open", transitionLabel: null, cells: { swell: "0.4 m" } },
-          { startMin: 690, endMin: 840, start: "11:30", end: "14:00", status: "closed", transitionLabel: "11:30", cells: { swell: "0.9 m" } },
+          { startMin: 540, endMin: 690, start: "09:00", end: "11:30", status: "open", transitionLabel: null, cells: { swell: "0.4 m" } },
+          { startMin: 690, endMin: 1050, start: "11:30", end: "17:30", status: "closed", transitionLabel: "11:30", cells: { swell: "0.9 m" } },
         ],
-        modeled: [],
       },
     ];
-    const [v] = buildHistoryView(payload);
-    expect(v.recorded).toBe(true);
-    expect(v.bar.map((b) => b.kind)).toEqual(["open", "closed"]);
-    expect(v.bar[0].widthPct).toBeCloseTo((150 / 540) * 100, 5);
-    expect(v.rows[1].time).toBe("11:30–14:00");
-    expect(v.rows[1].statusKind).toBe("closed");
+    const { days, axis } = buildHistoryView(payload);
+    const v = days[0];
+    expect(v.kind).toBe("reported");
+    expect(v.bar.map((b) => b.status)).toEqual(["open", "closed"]);
+    // Summer close 17:30 sets the span (510 min); the 150-min open segment is 29.4%.
+    expect(v.bar[0].widthPct).toBeCloseTo((150 / 510) * 100, 5);
+    expect(v.rows[1].time).toBe("11:30–17:30");
     expect(v.rows[1].cells.swell).toBe("0.9 m");
+    expect(axis[0].label).toBe("09:00");
+    expect(axis[axis.length - 1].label).toBe("17:30");
   });
 
-  it("falls back to a modeled bar and rows when nothing is recorded", () => {
+  it("marks a no-data day as none with an empty grid", () => {
     const payload: HistoryDayPayload[] = [
-      {
-        date: "2026-08-04",
-        label: "Tue 4 Aug",
-        segments: null,
-        modeled: [
-          { label: "Morning", pct: "4%", tone: "low", cells: { swell: "0.4 m" } },
-          { label: "Afternoon", pct: "5%", tone: "low", cells: { swell: "0.5 m" } },
-        ],
-      },
+      { date: "2026-08-04", label: "Tue 4 Aug", kind: "none", segments: [] },
     ];
-    const [v] = buildHistoryView(payload);
-    expect(v.recorded).toBe(false);
-    expect(v.bar[0].kind).toBe("modeled");
-    expect(v.rows.map((r) => r.statusKind)).toEqual(["modeled", "modeled"]);
-    expect(v.rows[0].statusLabel).toBe("4%");
+    const { days } = buildHistoryView(payload);
+    expect(days[0].kind).toBe("none");
+    expect(days[0].bar[0].status).toBe("none");
+    expect(days[0].rows).toEqual([]);
   });
 });

@@ -96,6 +96,11 @@ export const HISTORY_DAYS = 7;
  *  but show HISTORY_DAYS; bump HISTORY_DAYS later to surface the rest. */
 export const RETENTION_DAYS = 30;
 
+/** Grotto closure odds above which the history's *estimated* timeline reads
+ *  "closed" (more likely closed than open). Only used for forecast estimates,
+ *  never for reported data. */
+export const HISTORY_ESTIMATE_CLOSED_AT = 0.5;
+
 /** Gust term added to every standard activity's closure probability. */
 export const GUST = { midOffset: 8, kOffset: 1, weight: 0.6 } as const;
 

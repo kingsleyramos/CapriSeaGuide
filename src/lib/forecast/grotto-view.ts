@@ -9,7 +9,7 @@
  */
 
 import { COPY, type GrottoDisplayTone, type GrottoStatus } from "@/config/copy";
-import { GROTTO_HOURS, LOCATION, type PillTone } from "@/config/tuning";
+import { GROTTO_HOURS, LOCATION } from "@/config/tuning";
 import { pct } from "./math";
 
 export interface GrottoView {
@@ -85,102 +85,113 @@ export function buildGrottoView({
 
 /* --------------------------------------- 7-day history (timeline + grid) */
 
-/** One open/closed segment of a recorded day, with the sea behind it.
- *  Produced by the history route; rendered as a bar chunk + a grid row. */
+/** One open/closed segment of a day, with the sea behind it. Produced by the
+ *  history route (reported from readings, or estimated from the model). */
 export interface HistorySegment {
   startMin: number;
   endMin: number;
-  start: string; // "9:00"
+  start: string; // "09:00"
   end: string; // "11:30"
   status: "open" | "closed";
-  /** Time shown on the bar at this boundary; null for the first segment. */
+  /** Time shown on the bar at this boundary; null for the first segment, and
+   *  for every estimated segment (those are guesses at hour resolution). */
   transitionLabel: string | null;
-  cells: Record<string, string>;
-}
-/** A modeled AM/PM slot, shown when the recorder has no data for the day. */
-export interface HistoryModeledSlot {
-  label: string;
-  pct: string;
-  tone: PillTone;
   cells: Record<string, string>;
 }
 export interface HistoryDayPayload {
   date: string;
   label: string; // "Mon 3 Aug"
-  /** Recorded segments, or null when nothing was logged for the day. */
-  segments: HistorySegment[] | null;
-  modeled: HistoryModeledSlot[];
+  /** "reported" = boatmen's call, "estimated" = forecast, "none" = no data. */
+  kind: "reported" | "estimated" | "none";
+  segments: HistorySegment[];
 }
 
 export interface HistoryBarSegment {
   widthPct: number;
-  kind: "open" | "closed" | "modeled";
+  status: "open" | "closed" | "none";
   label: string | null;
 }
 export interface HistoryGridRow {
   time: string;
   statusLabel: string;
-  statusKind: "open" | "closed" | "modeled";
-  tone: PillTone | null;
+  statusKind: "open" | "closed";
   cells: Record<string, string>;
 }
 export interface HistoryDayView {
   date: string;
   label: string;
-  recorded: boolean;
+  kind: "reported" | "estimated" | "none";
   bar: HistoryBarSegment[];
   rows: HistoryGridRow[];
 }
+export interface HistoryAxisLabel {
+  label: string;
+  pct: number;
+}
+export interface HistoryView {
+  days: HistoryDayView[];
+  axis: HistoryAxisLabel[];
+}
 
-/** Shared axis: 9am to 6pm (equal 3-hour steps). Bars fill their real opening
- *  hours within it, so shorter winter days simply end earlier on the same scale. */
-const AXIS_MIN = 9 * 60;
-const AXIS_SPAN = 9 * 60;
+const AXIS_MIN = GROTTO_HOURS.open * 60;
 
+/** Seasonal close (minutes from midnight) for a date. */
 const closeMinForDate = (date: string) =>
   ((GROTTO_HOURS.summerMonths as readonly number[]).includes(Number(date.slice(5, 7)) - 1)
     ? GROTTO_HOURS.summerClose
     : GROTTO_HOURS.winterClose) * 60;
 
-const widthOf = (fromMin: number, toMin: number) =>
-  Math.max(0, ((toMin - fromMin) / AXIS_SPAN) * 100);
+const hhmm = (min: number) =>
+  `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 
-/** Turn the history payload into render models: a timeline bar per day plus the
- *  expandable grid behind it (recorded segments, or the modeled fallback). */
-export function buildHistoryView(days: HistoryDayPayload[]): HistoryDayView[] {
+/** Axis ticks from opening to the latest close shown: 09:00, every third hour, then the close. */
+function axisLabels(closeMin: number): HistoryAxisLabel[] {
+  const span = Math.max(1, closeMin - AXIS_MIN);
+  const marks = [AXIS_MIN];
+  for (let h = GROTTO_HOURS.open + 3; h * 60 < closeMin; h += 3) marks.push(h * 60);
+  marks.push(closeMin);
+  return marks.map((m) => ({ label: hhmm(m), pct: ((m - AXIS_MIN) / span) * 100 }));
+}
+
+/** Turn the history payload into render models. The scale is the latest close
+ *  among the days shown, so each bar fills to its own close and shorter days
+ *  render proportionally shorter (rescaling as the window slides). */
+export function buildHistoryView(days: HistoryDayPayload[]): HistoryView {
   const C = COPY.grottoHistory;
-  return days.map((day) => {
-    if (day.segments && day.segments.length) {
+  const maxCloseMin = days.length
+    ? Math.max(...days.map((d) => closeMinForDate(d.date)))
+    : GROTTO_HOURS.summerClose * 60;
+  const span = Math.max(1, maxCloseMin - AXIS_MIN);
+  const widthOf = (fromMin: number, toMin: number) =>
+    Math.max(0, ((toMin - fromMin) / span) * 100);
+
+  const views: HistoryDayView[] = days.map((day) => {
+    if (day.kind === "none" || !day.segments.length) {
       return {
         date: day.date,
         label: day.label,
-        recorded: true,
-        bar: day.segments.map((s) => ({
-          widthPct: widthOf(s.startMin, s.endMin),
-          kind: s.status,
-          label: s.transitionLabel,
-        })),
-        rows: day.segments.map((s) => ({
-          time: `${s.start}–${s.end}`,
-          statusLabel: C.statusWord[s.status],
-          statusKind: s.status,
-          tone: null,
-          cells: s.cells,
-        })),
+        kind: "none",
+        bar: [{ widthPct: widthOf(AXIS_MIN, closeMinForDate(day.date)), status: "none", label: null }],
+        rows: [],
       };
     }
     return {
       date: day.date,
       label: day.label,
-      recorded: false,
-      bar: [{ widthPct: widthOf(AXIS_MIN, closeMinForDate(day.date)), kind: "modeled", label: null }],
-      rows: day.modeled.map((m) => ({
-        time: m.label,
-        statusLabel: m.pct,
-        statusKind: "modeled" as const,
-        tone: m.tone,
-        cells: m.cells,
+      kind: day.kind,
+      bar: day.segments.map((s) => ({
+        widthPct: widthOf(s.startMin, s.endMin),
+        status: s.status,
+        label: s.transitionLabel,
+      })),
+      rows: day.segments.map((s) => ({
+        time: `${s.start}–${s.end}`,
+        statusLabel: C.statusWord[s.status],
+        statusKind: s.status,
+        cells: s.cells,
       })),
     };
   });
+
+  return { days: views, axis: axisLabels(maxCloseMin) };
 }
