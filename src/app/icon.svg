@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Capri Sea Guide">
-  <rect width="512" height="512" rx="115" fill="#0b6aa9"/>
-  <circle cx="256" cy="176" r="62" fill="#ffd66b"/>
-  <path d="M48 342 q52 -62 104 0 t104 0 t104 0" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round"/>
-  <path d="M48 410 q52 -62 104 0 t104 0 t104 0" fill="none" stroke="#bfe3f7" stroke-width="44" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#0b6aa9"></rect>
+  <path d="M30 10 L30 40 L14 40 Z" fill="#ffffff"></path>
+  <path d="M34 18 L34 40 L50 40 Z" fill="#ffffff" fill-opacity="0.55"></path>
+  <path d="M11 48 Q18 43 25 48 T39 48 T53 48" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"></path>
 </svg>

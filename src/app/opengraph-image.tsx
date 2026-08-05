@@ -38,7 +38,7 @@ export default function OpengraphImage() {
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: 96, fontWeight: 800, lineHeight: 1.02 }}>{M.name}</div>
           <div style={{ fontSize: 40, opacity: 0.92, marginTop: 24, maxWidth: 940 }}>
-            Will the Blue Grotto, boat tours &amp; ferries run today?
+            {M.tagline}
           </div>
         </div>
 

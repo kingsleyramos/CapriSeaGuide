@@ -51,8 +51,10 @@ export const COPY = {
       "Capri marine forecast",
       "Amalfi Coast ferry",
     ],
-    ogImageAlt:
-      "Capri Sea Guide: will the Blue Grotto, boat tours and ferries run today?",
+    /** The share card's tagline. Deliberately understated: this is a plain
+     *  summary of the sea reports, not a sales pitch. */
+    tagline: "A simple summary of Capri's sea conditions",
+    ogImageAlt: "Capri Sea Guide: a simple summary of Capri's sea conditions",
     /** Footer credit + JSON-LD author. */
     credit: "Created by",
     creator: "Kingsley Ramos",
