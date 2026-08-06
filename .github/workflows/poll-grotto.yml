@@ -1,4 +1,4 @@
-# Records a live Blue Grotto reading every 30 min during (roughly) opening
+# Records a live Blue Grotto reading during (roughly) opening
 # hours. Kept deliberately lean: no checkout, no dependencies, one curl per run,
 # and the cron is limited to the UTC window that can overlap Capri opening hours
 # (09:00-17:30 CEST / 09:00-14:00 CET). The endpoint itself no-ops outside the
@@ -19,7 +19,14 @@ name: poll-grotto
 
 on:
   schedule:
-    - cron: "*/30 7-15 * * *"
+    # Every 15 min, on minutes nobody else picks. GitHub queues scheduled runs
+    # globally and sheds load at the popular marks, so "*/30" -- i.e. :00 and
+    # :30 -- lost most of its runs: three fired over two days where thirty-six
+    # were due, arriving 12 to 94 minutes late. A late run is also a wasted run,
+    # since the endpoint gates on opening hours and rejects one that drifts past
+    # closing. Asking for four an hour off-peak is what actually yields the
+    # half-hourly reading the timeline is drawn from.
+    - cron: "7,22,37,52 7-15 * * *"
   workflow_dispatch: {}
 
 # This job only makes one outbound curl; it never touches the repo, so it is

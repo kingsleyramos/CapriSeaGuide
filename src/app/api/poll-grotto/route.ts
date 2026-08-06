@@ -20,7 +20,7 @@ function authorized(header: string | null, secret: string): boolean {
 
 /**
  * Records one live Blue Grotto reading. Called by the scheduler (a GitHub
- * Actions cron) every 30 min. It self-gates to opening hours, so a fixed
+ * Actions cron) every 15 min. It self-gates to opening hours, so a fixed
  * schedule that fires slightly outside hours just no-ops cheaply.
  *
  * Protect it by setting POLL_SECRET (also as the GitHub Actions secret). Locally
