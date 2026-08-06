@@ -47,9 +47,9 @@ function barFillClass(tone: TimelineBarSegment["tone"]): string {
 function statusPillClass(tone: BarTone): string {
   switch (tone) {
     case "open":
-      return "bg-grotto-open text-white";
+      return "bg-grotto-open text-chip-ink";
     case "closed":
-      return "bg-grotto-closed text-white";
+      return "bg-grotto-closed text-chip-ink";
     case "expectedOpen":
       return "bg-pill-low-bg text-pill-low-fg";
     case "possibleClosure":
@@ -133,7 +133,7 @@ function TodayRow({ today }: { today: TodayView }) {
                 style={{ width: `${seg.widthPct}%` }}
               >
                 {seg.label ? (
-                  <span className="whitespace-nowrap pl-1.5 text-[11px] font-medium text-white">
+                  <span className="whitespace-nowrap pl-1.5 text-[11px] font-medium text-chip-ink">
                     {seg.label}
                   </span>
                 ) : null}
@@ -195,7 +195,7 @@ function HistoryDayRow({ view }: { view: HistoryDayView }) {
               {seg.tone === "none" ? (
                 <span className="w-full text-center text-[11px] text-bar-none-fg">{s.legend.none}</span>
               ) : seg.label ? (
-                <span className="whitespace-nowrap pl-1.5 text-[11px] font-medium text-white">
+                <span className="whitespace-nowrap pl-1.5 text-[11px] font-medium text-chip-ink">
                   {seg.label}
                 </span>
               ) : null}

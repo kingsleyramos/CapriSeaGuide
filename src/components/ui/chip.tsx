@@ -6,7 +6,7 @@ import { confDotClass, grottoChipClass, pillClass, verdictChipClass } from "@/li
 import { cn } from "@/lib/utils";
 
 const chipBase =
-  "inline-flex items-center rounded-full px-3.5 py-1.5 text-[13px] font-bold uppercase leading-none tracking-[0.02em] text-white whitespace-nowrap";
+  "inline-flex items-center rounded-full px-3.5 py-1.5 text-[13px] font-bold uppercase leading-none tracking-[0.02em] text-chip-ink whitespace-nowrap";
 
 /** Verdict chip (Calm / Good / Uncertain / Likely off / Off). */
 export function VerdictChip({
