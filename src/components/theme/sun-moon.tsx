@@ -5,16 +5,12 @@ import { COPY } from "@/config/copy";
 import { useTheme } from "./use-theme";
 
 /**
- * Sun or moon beside the Capri clock: says why the page is the colour it is,
- * and lets the reader disagree.
+ * Sun or moon beside the Capri clock. It explains the theme as much as it sets
+ * it: following a remote island's daylight is a surprising rule for someone
+ * reading at midday elsewhere. Pressing it pins the other theme.
  *
- * The theme follows Capri's daylight by default, which is a surprising rule for
- * someone reading at midday on the other side of the world -- so the icon
- * doubles as the explanation. Pressing it pins the other theme for good.
- *
- * Renders nothing on the server and on the first client pass: the theme is a
- * function of the clock, and this page's HTML is static, so committing either
- * icon to it would ship the wrong one to half of all readers.
+ * Renders nothing until the client resolves: this page's HTML is static, so
+ * baking either icon in would ship the wrong one to half of all readers.
  */
 export function SunMoon() {
   const { theme, overridden, toggle } = useTheme();

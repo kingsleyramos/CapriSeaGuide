@@ -3,22 +3,16 @@ import { LOCATION } from "@/config/tuning";
 const { lat, lon } = LOCATION.island;
 
 /**
- * Decides the theme and applies it, as the first thing the document does.
+ * Applies the theme before the first paint; deciding it in React instead would
+ * render the light page and repaint it dark.
  *
- * This runs inline in the head, before any paint, because the alternative --
- * deciding in React -- renders the light page first and repaints it dark. It is
- * a hand-inlined copy of `isDaylight` from lib/sun: an inline script cannot
- * import, and the CSP grants no 'unsafe-eval' for it to compile one. A test
- * (lib/sun.test.ts) evaluates this string against the module every hour of a
- * year, so the copies cannot drift apart silently.
+ * A hand-inlined copy of `isDaylight`: an inline script cannot import, and the
+ * CSP grants no 'unsafe-eval' to compile one. lib/sun.test.ts evaluates this
+ * string against the module hourly across a year so they cannot drift.
  *
- * A stored choice wins: someone who has pressed the toggle gets what they
- * picked, immediately, with no flash of the other theme. Absent that, the sun
- * decides. localStorage is read in a try/catch because it throws outright in
- * some privacy modes, and a theme is not worth a blank page.
- *
- * Reads `nowMs` when the test supplies one; in the document there is no such
- * binding and it falls through to the real clock.
+ * A stored choice beats the sun. localStorage is guarded because it throws
+ * outright in some privacy modes. `nowMs` is the test's injection point; in the
+ * document no such binding exists and it falls through to the clock.
  */
 export const THEME_KEY = "capri-theme";
 

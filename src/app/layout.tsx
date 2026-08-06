@@ -48,9 +48,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // Both palettes exist, so form controls and scrollbars follow the theme.
-  // themeColor stays light: the browser picks it before our script runs, and a
-  // dark chrome bar above a light page is worse than the reverse.
+  // themeColor stays light: the browser reads it before our script runs, and
+  // dark chrome above a light page is worse than the reverse.
   themeColor: "#ffffff",
   colorScheme: "light dark",
   width: "device-width",
@@ -61,10 +60,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full">
       <head>
-        {/* Before the first paint: the theme follows Capri's daylight, and this
-            page is statically prerendered, so the server cannot know which one
-            to send. Deciding here rather than in React is what stops a light
-            page flashing dark on every night-time load. */}
+        {/* Runs before the first paint. The page is statically prerendered, so
+            the server cannot know the time; deciding in React instead would
+            flash a light page dark on every night-time load. */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){${THEME_SCRIPT}})()` }} />
       </head>
       <body className="min-h-full">

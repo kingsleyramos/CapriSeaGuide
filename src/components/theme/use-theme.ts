@@ -10,8 +10,7 @@ export type Theme = "light" | "dark";
 const { lat, lon } = LOCATION.island;
 const themeAt = (ms: number): Theme => (isDaylight(ms, lat, lon) ? "light" : "dark");
 
-/** Both of these swallow errors: localStorage throws outright in some privacy
- *  modes, and the theme is never worth breaking the page over. */
+/** Guarded: localStorage throws outright in some privacy modes. */
 function readOverride(): Theme | null {
   try {
     const v = localStorage.getItem(THEME_KEY);
@@ -33,22 +32,17 @@ function writeOverride(theme: Theme | null) {
 export interface ThemeState {
   /** Null until the client resolves it; the head script has already painted. */
   theme: Theme | null;
-  /** Whether the reader has overridden the sun. */
   overridden: boolean;
-  /** Flip to the other theme, and remember it. */
   toggle: () => void;
 }
 
 /**
- * The theme, following Capri's daylight unless the reader has said otherwise.
+ * The theme, following Capri's daylight unless the reader has overridden it.
  *
  * Starts null so the first render matches the server's HTML, which cannot know
- * the time. The head script has already applied the colours by then, so there is
- * nothing to see; components render nothing until this resolves.
- *
- * While the sun is in charge this sleeps until the next sunrise or sunset rather
- * than polling, and re-checks when a suspended tab returns. An overridden theme
- * needs neither.
+ * the time; the head script has already applied the colours by then. While the
+ * sun is in charge it sleeps until the next sunrise or sunset rather than
+ * polling, and re-checks when a suspended tab returns.
  */
 export function useTheme(): ThemeState {
   const [theme, setTheme] = useState<Theme | null>(null);

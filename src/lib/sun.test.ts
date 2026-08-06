@@ -6,10 +6,9 @@ import { isDaylight, nextSunEvent, sunTimes } from "./sun";
 const { lat, lon } = LOCATION.island;
 
 describe("sunTimes", () => {
-  // Cross-checked against Open-Meteo's own sunrise/sunset for these coordinates
-  // (queried with timezone=UTC, so no DST ambiguity). Asserted in UTC for the
-  // same reason. Tolerance 2 min: this equation ignores elevation and the local
-  // horizon, and measured within 1 min of Open-Meteo on every date below.
+  // Values from Open-Meteo for these coordinates, queried and asserted in UTC
+  // so DST cannot confuse either side. Tolerance is 2 min because the equation
+  // ignores elevation and the local horizon; measured within 1 min on all five.
   const cases = [
     { date: "2025-03-20", sunrise: "05:05", sunset: "17:14" }, // equinox
     { date: "2025-06-21", sunrise: "03:32", sunset: "18:37" }, // summer solstice
@@ -84,8 +83,8 @@ describe("nextSunEvent", () => {
 });
 
 describe("inline script agrees with the module", () => {
-  // The head script is a hand-inlined copy: it cannot import, and the CSP has no
-  // 'unsafe-eval' for it to build one at runtime. This is what keeps them honest.
+  // The head script is a hand-inlined copy of the module; this is what stops
+  // the two drifting apart.
   it("returns the same answer at every hour of a year", () => {
     const evaluate = new Function(
       "nowMs",
@@ -103,8 +102,7 @@ describe("inline script agrees with the module", () => {
 });
 
 describe("stored override", () => {
-  // The head script must honour a saved choice, or a reader who picked light
-  // watches the page load dark and correct itself.
+  // Or a reader who picked light watches the page load dark and correct itself.
   const run = (nowMs: number, stored: string | null) => {
     const fn = new Function(
       "nowMs",

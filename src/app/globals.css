@@ -17,10 +17,10 @@
   /* Ink + surfaces */
   --color-ink: #111827;
   --color-ink-soft: #4b5563;
-  /* #5f6875, not #6b7280: the spec measured muted-on-muted at 4.39:1, under AA. */
+  /* #5f6875, not #6b7280: muted-on-muted measured 4.39:1, under AA. */
   --color-ink-mute: #5f6875;
   --color-ink-faint: #9ca3af;
-  /* Chip and pill text on a saturated fill. Inverts in the dark palette. */
+  /* Text on a saturated fill; inverts with the theme. */
   --color-chip-ink: #ffffff;
   --color-line: #e5e7eb;
   --color-line-soft: #f3f4f6;
@@ -30,7 +30,7 @@
   --color-surface-muted: #f3f4f6;
   --color-link: #0b6aa9;
 
-  /* Verdict chip fills. Chip text is --color-chip-ink. */
+  /* Verdict chip fills; their text is --color-chip-ink. */
   --color-calm: #15803d;
   --color-good: #3d7c28;
   --color-uncertain: #b45309;
@@ -65,9 +65,9 @@
   --color-grotto-unknown: #6b7280;
   --color-grotto-offhours: #4b5563;
 
-  /* Timeline bar fills and legend swatches. Separate from the pill tokens they
-     used to borrow: a pill background sits *under text* and a bar fill sits
-     *on the card*, and the two want opposite treatment once the card is dark. */
+  /* Timeline fills. Separate from the pill tokens they once borrowed: a pill
+     background sits under text, a fill sits on the card, and once the card is
+     dark those want opposite treatment. */
   --color-bar-expected: #dcfce7;
   --color-bar-possible: #fef3c7;
   --color-bar-none: #f3f4f6;
@@ -80,13 +80,10 @@
 }
 
 /*
- * Night palette, from the project's Color System spec. Applied when it is dark
- * in Capri, or when the reader has pinned it (see components/theme).
- *
- * Not an inversion: the verdict chips lighten and take near-black text, because
- * a mid-dark green on a dark page reads muddy rather than confident. The card
- * tints lean on saturation instead of lightness -- at 1.2-1.3:1 against the page
- * they stay quiet, and hue is what makes them read as green or red.
+ * Night palette, from the project's Color System spec. Not an inversion: the
+ * verdict chips lighten and take near-black text, since a mid-dark green on a
+ * dark page reads muddy. The card tints carry their meaning in hue rather than
+ * lightness, staying at ~1.2:1 against the page so they keep quiet.
  */
 :root[data-theme="dark"] {
   --color-ink: #e8eef7;
@@ -131,10 +128,9 @@
   --color-grotto-unknown: #8496ad;
   --color-grotto-offhours: #93a5c0;
 
-  /* Not in the spec, which does not cover the timeline. Derived to clear the
-     3:1 WCAG asks of a meaningful graphic against the card, while staying
-     quieter than the reported tones -- which the spec makes the bright ones
-     here, the reverse of daylight. Reported reads ~7.9:1, forecast ~3.1:1. */
+  /* Not in the spec. Derived to clear the 3:1 WCAG asks of a meaningful
+     graphic while staying quieter than the reported tones, which the spec makes
+     the bright ones here -- the reverse of daylight. */
   --color-bar-expected: #357252;
   --color-bar-possible: #856828;
   --color-bar-none: #5b6878;
@@ -154,8 +150,7 @@ body {
   background: var(--color-surface);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  /* Themes swap whole palettes at sunrise and sunset; without this the page
-     snaps between them mid-read. */
+  /* Palettes swap at sunrise and sunset, mid-read. */
   transition:
     background-color 400ms ease,
     color 400ms ease;

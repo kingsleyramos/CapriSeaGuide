@@ -2,14 +2,10 @@ import { COPY } from "@/config/copy";
 import { LOCATION } from "@/config/tuning";
 
 /**
- * schema.org JSON-LD for the site. Four linked nodes: the website, the app
- * itself, the island it is about, and the person who made it. The `@id` fields
- * let them reference each other, which is what search engines read to understand
- * who is behind the page and where it applies.
- *
- * The Place matters more than it looks: "Capri" alone is ambiguous (there are
- * others, and a car), so the country and coordinates are what tie this to the
- * island in the Bay of Naples.
+ * schema.org JSON-LD: website, app, the island it is about, and the author.
+ * The `@id` fields cross-reference them, which is how search engines read who
+ * is behind the page and where it applies. The Place carries the country and
+ * coordinates because "Capri" alone is ambiguous.
  */
 export function StructuredData() {
   const { name, url, description, creator, creatorUrl } = COPY.meta;

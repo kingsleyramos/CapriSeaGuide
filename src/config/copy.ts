@@ -75,7 +75,7 @@ export const COPY = {
     updatedPrefix: "Updated",
     capriTimeSuffix: "Capri time",
     inCapriSuffix: "in Capri, Italy",
-    /** The sun/moon beside the clock: what it reports, and what pressing does. */
+    /** Tooltip and label for the sun/moon beside the clock. */
     daylight: {
       day: "Daylight in Capri",
       night: "Night in Capri",
