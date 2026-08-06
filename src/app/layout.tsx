@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { COPY } from "@/config/copy";
 import { StructuredData } from "@/components/seo/structured-data";
+import { THEME_SCRIPT } from "@/components/theme/theme-script";
 import "./globals.css";
 
 const M = COPY.meta;
@@ -47,9 +48,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // Match the page's white surface so mobile browser chrome blends in.
+  // themeColor stays light: the browser reads it before our script runs, and
+  // dark chrome above a light page is worse than the reverse.
   themeColor: "#ffffff",
-  colorScheme: "light",
+  colorScheme: "light dark",
   width: "device-width",
   initialScale: 1,
 };
@@ -57,6 +59,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full">
+      <head>
+        {/* Runs before the first paint. The page is statically prerendered, so
+            the server cannot know the time; deciding in React instead would
+            flash a light page dark on every night-time load. */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){${THEME_SCRIPT}})()` }} />
+      </head>
       <body className="min-h-full">
         <StructuredData />
         {children}

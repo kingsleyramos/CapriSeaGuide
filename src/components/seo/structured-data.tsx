@@ -1,10 +1,11 @@
 import { COPY } from "@/config/copy";
+import { LOCATION } from "@/config/tuning";
 
 /**
- * schema.org JSON-LD for the site. Three linked nodes: the website, the app
- * itself, and the person who made it. The `@id` fields let them reference each
- * other (the site's publisher and the app's author both point at the Person),
- * which is what search engines read to understand who's behind the page.
+ * schema.org JSON-LD: website, app, the island it is about, and the author.
+ * The `@id` fields cross-reference them, which is how search engines read who
+ * is behind the page and where it applies. The Place carries the country and
+ * coordinates because "Capri" alone is ambiguous.
  */
 export function StructuredData() {
   const { name, url, description, creator, creatorUrl } = COPY.meta;
@@ -19,6 +20,7 @@ export function StructuredData() {
         description,
         inLanguage: "en",
         publisher: { "@id": `${url}/#person` },
+        about: { "@id": `${url}/#place` },
       },
       {
         "@type": "WebApplication",
@@ -30,6 +32,23 @@ export function StructuredData() {
         operatingSystem: "Web",
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         author: { "@id": `${url}/#person` },
+        about: { "@id": `${url}/#place` },
+      },
+      {
+        "@type": "Place",
+        "@id": `${url}/#place`,
+        name: "Capri",
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Capri",
+          addressRegion: "Campania",
+          addressCountry: "IT",
+        },
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: LOCATION.island.lat,
+          longitude: LOCATION.island.lon,
+        },
       },
       {
         "@type": "Person",

@@ -35,7 +35,7 @@ export const COPY = {
     /** The <title> tag: brand plus what the site actually answers. */
     title: "Capri Sea Guide: Blue Grotto, Boat Tours & Ferries",
     description:
-      "Sea conditions and closure forecasts for Capri, aggregated from several marine sources. Hourly, and for the days ahead.",
+      "Sea conditions and closure forecasts for Capri, Italy, aggregated from several marine sources. Hourly, and for the days ahead.",
     /** Canonical origin (also drives Open Graph, sitemap, robots, JSON-LD). */
     url: "https://capriseaguide.com",
     locale: "en_US",
@@ -74,7 +74,14 @@ export const COPY = {
     /** e.g. "Updated 09:20 Capri time · refreshes hourly" */
     updatedPrefix: "Updated",
     capriTimeSuffix: "Capri time",
-    inCapriSuffix: "in Capri",
+    inCapriSuffix: "in Capri, Italy",
+    /** Tooltip and label for the sun/moon beside the clock. */
+    daylight: {
+      day: "Daylight in Capri",
+      night: "Night in Capri",
+      pinned: "Theme set by you",
+      action: "Switch theme",
+    },
     minAgo: (mins: number) => `(${mins} min ago)`,
     statLabels: {
       waves: "Waves",
