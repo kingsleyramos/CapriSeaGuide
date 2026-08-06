@@ -35,11 +35,11 @@ function barFillClass(tone: TimelineBarSegment["tone"]): string {
     case "closed":
       return "bg-grotto-closed";
     case "expectedOpen":
-      return "bg-pill-low-bg";
+      return "bg-bar-expected";
     case "possibleClosure":
-      return "bg-pill-mid-bg";
+      return "bg-bar-possible";
     default:
-      return "bg-surface-muted";
+      return "bg-bar-none";
   }
 }
 
@@ -76,9 +76,9 @@ function Legend() {
     <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-ink-soft">
       <LegendSwatch className="bg-grotto-open" label={s.open} />
       <LegendSwatch className="bg-grotto-closed" label={s.closed} />
-      <LegendSwatch className="border border-line bg-pill-low-bg" label={s.expectedOpen} />
-      <LegendSwatch className="border border-line bg-pill-mid-bg" label={s.possibleClosure} />
-      <LegendSwatch className="border border-dashed border-line bg-surface-muted" label={s.none} />
+      <LegendSwatch className="bg-bar-expected" label={s.expectedOpen} />
+      <LegendSwatch className="bg-bar-possible" label={s.possibleClosure} />
+      <LegendSwatch className="bg-bar-none" label={s.none} />
     </div>
   );
 }

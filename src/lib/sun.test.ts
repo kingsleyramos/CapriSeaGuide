@@ -101,3 +101,33 @@ describe("inline script agrees with the module", () => {
     }
   });
 });
+
+describe("stored override", () => {
+  // The head script must honour a saved choice, or a reader who picked light
+  // watches the page load dark and correct itself.
+  const run = (nowMs: number, stored: string | null) => {
+    const fn = new Function(
+      "nowMs",
+      "localStorage",
+      `${THEME_SCRIPT.replace(/document\.documentElement\.dataset\.theme=(o|t)/g, "return $1")}`,
+    ) as (nowMs: number, ls: { getItem: () => string | null }) => string;
+    return fn(nowMs, { getItem: () => stored });
+  };
+
+  const night = Date.parse("2026-08-06T00:30:00Z");
+  const day = Date.parse("2026-08-06T12:00:00Z");
+
+  it("follows the sun when nothing is stored", () => {
+    expect(run(night, null)).toBe("dark");
+    expect(run(day, null)).toBe("light");
+  });
+
+  it("lets a stored choice beat the sun, both ways", () => {
+    expect(run(night, "light")).toBe("light");
+    expect(run(day, "dark")).toBe("dark");
+  });
+
+  it("ignores a junk value rather than trusting it", () => {
+    expect(run(day, "banana")).toBe("light");
+  });
+});

@@ -63,6 +63,13 @@
   /* Outside opening hours: neutral, non-alarming (white text passes AA). */
   --color-grotto-offhours: #4b5563;
 
+  /* Timeline bar fills and legend swatches. Separate from the pill tokens they
+     used to borrow: a pill background sits *under text* and a bar fill sits
+     *on the card*, and the two want opposite treatment once the card is dark. */
+  --color-bar-expected: #dcfce7;
+  --color-bar-possible: #fef3c7;
+  --color-bar-none: #f3f4f6;
+
   /* Error state */
   --color-danger-line: #fecaca;
   --color-danger-bg: #fef2f2;
@@ -117,6 +124,13 @@
   --color-grotto-closed: #c73434;
   --color-grotto-unknown: #5c6675;
   --color-grotto-offhours: #4b5563;
+
+  /* Fills, not pill backgrounds: each clears 3:1 against the dark card, which
+     is what WCAG asks of a graphic that carries meaning. Forecast fills stay
+     lighter than their reported counterparts, as they are in daylight. */
+  --color-bar-expected: #3f8a63;
+  --color-bar-possible: #96762e;
+  --color-bar-none: #5b6878;
 
   --color-danger-line: #4a2326;
   --color-danger-bg: #241618;

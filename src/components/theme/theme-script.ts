@@ -12,10 +12,19 @@ const { lat, lon } = LOCATION.island;
  * (lib/sun.test.ts) evaluates this string against the module every hour of a
  * year, so the copies cannot drift apart silently.
  *
+ * A stored choice wins: someone who has pressed the toggle gets what they
+ * picked, immediately, with no flash of the other theme. Absent that, the sun
+ * decides. localStorage is read in a try/catch because it throws outright in
+ * some privacy modes, and a theme is not worth a blank page.
+ *
  * Reads `nowMs` when the test supplies one; in the document there is no such
  * binding and it falls through to the real clock.
  */
+export const THEME_KEY = "capri-theme";
+
 export const THEME_SCRIPT = `
+var o=null;try{o=localStorage.getItem("${THEME_KEY}")}catch(e){}
+if(o==="light"||o==="dark"){document.documentElement.dataset.theme=o}else{
 var n=typeof nowMs==="number"?nowMs:Date.now(),
 R=Math.PI/180,D=864e5,la=${lat},lo=${lon},
 j=Math.floor(n/D)+.5,
@@ -31,7 +40,7 @@ w=Math.acos(Math.min(1,Math.max(-1,ca)))/R/360,
 ms=function(x){return(x-2440587.5)*D},
 sr=ms(T-w),ss=ms(T+w),
 t=n>=sr&&n<ss?"light":"dark";
-document.documentElement.dataset.theme=t
+document.documentElement.dataset.theme=t}
 `
   .trim()
   .replace(/\n/g, "");
