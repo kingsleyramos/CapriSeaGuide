@@ -185,6 +185,14 @@ export const SPREAD = {
 /** How far ahead (ms) a re-fetch is triggered when the tab regains focus. */
 export const REFRESH = {
   intervalMs: 3_600_000, // hourly
+  /**
+   * The two grotto endpoints while the cave is open. They move on the recorder's
+   * cadence, not the forecast's: a reading lands every 30 min, and on the hourly
+   * interval an open tab could sit a full hour behind one that had already been
+   * recorded and served. Outside opening hours nothing new is written, so both
+   * fall back to `intervalMs`.
+   */
+  liveIntervalMs: 600_000, // 10 min
   staleAfterMs: 1_800_000, // 30 min
   clockTickMs: 60_000,
   /** "(n min ago)" only shows once the data is at least this old. */

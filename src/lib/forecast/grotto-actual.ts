@@ -11,7 +11,7 @@
  * each day is capped at its season's closing time (see GROTTO_HOURS).
  */
 
-import { GROTTO_FORECAST, GROTTO_HOURS, LOCATION } from "@/config/tuning";
+import { GROTTO_FORECAST, GROTTO_HOURS, LOCATION, REFRESH } from "@/config/tuning";
 import type { GrottoReading } from "./types";
 
 /** Reported (solid) segment status. */
@@ -57,6 +57,17 @@ export const closeHourForMonth = (month: number) =>
   (GROTTO_HOURS.summerMonths as readonly number[]).includes(month)
     ? GROTTO_HOURS.summerClose
     : GROTTO_HOURS.winterClose;
+
+/** Whether the cave is open at `ms`. Readings are only recorded inside these
+ *  hours, so this doubles as "is there anything new worth fetching". */
+export const isWithinGrottoHours = (ms: number, timezone: string = LOCATION.timezone) => {
+  const { month, minute } = capriParts(ms, timezone);
+  return minute >= GROTTO_HOURS.open * 60 && minute < closeHourForMonth(month) * 60;
+};
+
+/** How long the client should wait before refetching the grotto endpoints. */
+export const grottoPollDelayMs = (ms: number = Date.now()) =>
+  isWithinGrottoHours(ms) ? REFRESH.liveIntervalMs : REFRESH.intervalMs;
 
 /**
  * Merge a day's readings into open/closed segments across opening hours. The

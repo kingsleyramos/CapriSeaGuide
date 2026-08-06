@@ -34,7 +34,7 @@ public.
 
  Open-Meteo (past 7d + today/tomorrow) ┐
  recorded calls (Upstash, optional)    ├▶ /api/grotto-history ─▶ today's bar + 7-day history
-                                       ┘         (cached 15 min)
+                                       ┘         (cached 5 min)
 ```
 
 Everything that touches the network runs **server-side** in route handlers, so

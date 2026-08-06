@@ -57,8 +57,11 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
+  // suppressHydrationWarning: the head script sets data-theme on <html> before
+  // React hydrates, which React would otherwise report as a mismatch on every
+  // load. It covers this element's own attributes only, not the tree below.
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
         {/* Runs before the first paint. The page is statically prerendered, so
             the server cannot know the time; deciding in React instead would
