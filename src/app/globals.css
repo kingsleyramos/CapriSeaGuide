@@ -17,7 +17,9 @@
   /* Ink + surfaces */
   --color-ink: #111827;
   --color-ink-soft: #4b5563;
-  --color-ink-mute: #6b7280;
+  /* Nudged from #6b7280: that was 4.39:1 on surface-muted, just under AA, and
+     this token is used on all three light surfaces. */
+  --color-ink-mute: #676e7c;
   --color-ink-faint: #9ca3af;
   --color-line: #e5e7eb;
   --color-line-soft: #f3f4f6;
@@ -69,6 +71,9 @@
   --color-bar-expected: #dcfce7;
   --color-bar-possible: #fef3c7;
   --color-bar-none: #f3f4f6;
+  /* The "No data" label sits on the fill above, so it is paired with it rather
+     than with the card. ink-mute was 4.39:1 here, just under AA. */
+  --color-bar-none-fg: #4b5563;
 
   /* Error state */
   --color-danger-line: #fecaca;
@@ -128,9 +133,13 @@
   /* Fills, not pill backgrounds: each clears 3:1 against the dark card, which
      is what WCAG asks of a graphic that carries meaning. Forecast fills stay
      lighter than their reported counterparts, as they are in daylight. */
-  --color-bar-expected: #3f8a63;
-  --color-bar-possible: #96762e;
+  /* Forecast fills are pale washes of their hue, as they are in daylight: the
+     reported segments are the saturated ones. The first attempt kept these
+     dark, which left "expected open" a near-twin of "open" at 1.28:1. */
+  --color-bar-expected: #7fc79e;
+  --color-bar-possible: #dfc07a;
   --color-bar-none: #5b6878;
+  --color-bar-none-fg: #e8edf4;
 
   --color-danger-line: #4a2326;
   --color-danger-bg: #241618;

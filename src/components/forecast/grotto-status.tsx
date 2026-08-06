@@ -193,7 +193,7 @@ function HistoryDayRow({ view }: { view: HistoryDayView }) {
               style={{ width: `${seg.widthPct}%` }}
             >
               {seg.tone === "none" ? (
-                <span className="w-full text-center text-[11px] text-ink-mute">{s.legend.none}</span>
+                <span className="w-full text-center text-[11px] text-bar-none-fg">{s.legend.none}</span>
               ) : seg.label ? (
                 <span className="whitespace-nowrap pl-1.5 text-[11px] font-medium text-white">
                   {seg.label}
