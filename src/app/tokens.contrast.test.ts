@@ -5,10 +5,8 @@ import { describe, expect, it } from "vitest";
 /**
  * Contrast floors for the timeline, asserted against globals.css itself.
  *
- * These bars are the only place a colour carries information with no text
- * beside it, so a token nudged for aesthetics can silently drop a state below
- * legibility. That has happened twice: the pale light-mode set measured 1.10:1
- * on the card, and a brightened dark-mode fill once left its label at 2.01:1.
+ * These bars are the only place a colour carries meaning with no text beside
+ * it, so a token nudged for looks can drop a state below legibility silently.
  */
 
 const css = readFileSync(fileURLToPath(new URL("./globals.css", import.meta.url)), "utf8");

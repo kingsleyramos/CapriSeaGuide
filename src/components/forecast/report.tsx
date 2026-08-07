@@ -22,8 +22,8 @@ const usable = (r: ForecastReport | null): r is ForecastReport =>
   !!r && r.hours.length > 0 && r.days.length > 0;
 
 interface ReportProps {
-  /** The forecast the page was rendered with; null if that load failed, in
-   *  which case this behaves exactly as it did before the page rendered one. */
+  /** The forecast the page rendered with; null if that load failed, leaving the
+   *  client to fetch it as before. */
   initialReport?: ForecastReport | null;
   /** The server's clock at render, so hydration reproduces the same strings. */
   serverNow?: number;

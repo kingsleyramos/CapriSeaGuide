@@ -52,10 +52,8 @@ describe("useGrottoPolling", () => {
     renderHook(() => useGrottoPolling(load));
     await flush();
 
-    // Moves the wall clock without running timers, which is what a browser does
-    // to a backgrounded tab: throttled or frozen entirely, so the scheduled poll
-    // never fired and the copy went stale. This is the case focus covers and an
-    // interval cannot.
+    // Clock moves, timers do not: a frozen background tab, which is the case
+    // focus covers and an interval cannot.
     fireVisibility("hidden");
     vi.setSystemTime(OPEN_HOURS + REFRESH.liveIntervalMs + 1000);
 
