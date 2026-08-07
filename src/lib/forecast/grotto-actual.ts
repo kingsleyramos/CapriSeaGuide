@@ -14,6 +14,7 @@
  */
 
 import { GROTTO_FORECAST, GROTTO_HOURS, LOCATION } from "@/config/tuning";
+import { capriParts, closeHourForMonth } from "./grotto-hours";
 import type { GrottoReading } from "./types";
 
 /** Reported (solid) segment status. */
@@ -43,22 +44,6 @@ export interface ModeledSegment {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 export const minToHHMM = (min: number) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
-
-/** Capri-local calendar date, integer hour, and minutes-from-midnight for a ms epoch. */
-export function capriParts(ms: number, timezone: string = LOCATION.timezone) {
-  const d = new Date(new Date(ms).toLocaleString("en-US", { timeZone: timezone }));
-  return {
-    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
-    month: d.getMonth(),
-    hour: d.getHours(),
-    minute: d.getHours() * 60 + d.getMinutes(),
-  };
-}
-
-export const closeHourForMonth = (month: number) =>
-  (GROTTO_HOURS.summerMonths as readonly number[]).includes(month)
-    ? GROTTO_HOURS.summerClose
-    : GROTTO_HOURS.winterClose;
 
 /**
  * Merge a day's readings into open/closed segments across opening hours. The

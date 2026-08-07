@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { publicMessage } from "@/lib/errors";
-import { isWithinGrottoHours } from "@/lib/forecast/grotto-view";
+import { isWithinGrottoHours } from "@/lib/forecast/grotto-hours";
 import { fetchGrottoStatus } from "@/lib/sources/grotto";
 import { isStoreConfigured, recordReading } from "@/lib/store/grotto-log";
 

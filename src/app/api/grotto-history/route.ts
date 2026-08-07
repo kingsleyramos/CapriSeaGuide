@@ -2,13 +2,8 @@ import { NextResponse } from "next/server";
 import { COPY } from "@/config/copy";
 import { GROTTO_HOURS, HISTORY_DAYS, LOCATION, SLOT_HOURS } from "@/config/tuning";
 import { buildHours } from "@/lib/forecast/aggregate";
-import {
-  capriParts,
-  closeHourForMonth,
-  deriveSegments,
-  minToHHMM,
-  modeledSegments,
-} from "@/lib/forecast/grotto-actual";
+import { deriveSegments, minToHHMM, modeledSegments } from "@/lib/forecast/grotto-actual";
+import { capriParts, closeHourForMonth } from "@/lib/forecast/grotto-hours";
 import type {
   BarSegment,
   HistoryDayPayload,
