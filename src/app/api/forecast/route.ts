@@ -3,12 +3,10 @@ import { publicMessage } from "@/lib/errors";
 import { loadReport } from "@/lib/forecast/load";
 
 /**
- * Dynamic, not ISR. `export const revalidate` puts this in Next's own cache,
- * whose Expire is a year: on a quiet site the first visitor of the day is served
- * however old the last entry is -- 400 min was observed -- and only *then* is a
- * regeneration queued, so the refresh lands for the next visitor rather than
- * this one. The CDN honours the header below instead, which bounds staleness to
- * s-maxage + stale-while-revalidate.
+ * Dynamic, not ISR: `export const revalidate` caches in Next with a one-year
+ * expiry, so a quiet site serves the first visitor whatever the last one left
+ * and only then queues the regeneration that the *next* visitor gets. The
+ * header below bounds staleness instead.
  */
 export const dynamic = "force-dynamic";
 
