@@ -11,11 +11,12 @@ import { describe, expect, it } from "vitest";
 
 const css = readFileSync(fileURLToPath(new URL("./globals.css", import.meta.url)), "utf8");
 
-/** Hex tokens declared inside a block, e.g. `@theme` or the dark selector. */
-function palette(startsWith: string): Record<string, string> {
-  const start = css.indexOf(startsWith);
-  if (start < 0) throw new Error(`block not found: ${startsWith}`);
-  const open = css.indexOf("{", start);
+/** Hex tokens declared inside a block. Matched on a pattern, not a literal, so
+ *  reformatting the stylesheet cannot quietly stop this file from checking it. */
+function palette(selector: RegExp): Record<string, string> {
+  const match = selector.exec(css);
+  if (!match) throw new Error(`block not found: ${selector}`);
+  const open = css.indexOf("{", match.index);
   const block = css.slice(open, css.indexOf("\n}", open));
   const out: Record<string, string> = {};
   for (const [, name, hex] of block.matchAll(/--color-([a-z-]+):\s*(#[0-9a-fA-F]{6})/g)) {
@@ -37,15 +38,29 @@ const ratio = (a: string, b: string) => {
 };
 
 const themes = {
-  light: palette("@theme"),
-  dark: palette(':root[data-theme="dark"]'),
+  light: palette(/@theme\b/),
+  dark: palette(/:root\[data-theme=['"]dark['"]\]/),
 };
 
 describe.each(Object.entries(themes))("%s timeline tokens", (_name, t) => {
   const fills = ["bar-expected", "bar-possible", "bar-none", "grotto-open", "grotto-closed"];
 
-  it.each(fills)("%s clears 3:1 against the card it sits on", (token) => {
-    expect(ratio(t[token], t["surface-raised"])).toBeGreaterThanOrEqual(3);
+  // 1.4.11 asks the object to be distinguishable, not the fill specifically, so
+  // a light fill qualifies on the strength of its outline.
+  it.each(fills)("%s is bounded at 3:1 against the card, by fill or by edge", (token) => {
+    const edge = t[`${token}-edge`];
+    const best = Math.max(
+      ratio(t[token], t["surface-raised"]),
+      edge ? ratio(edge, t["surface-raised"]) : 0,
+    );
+    expect(best).toBeGreaterThanOrEqual(3);
+  });
+
+  it("gives an edge to every fill that cannot carry 3:1 alone", () => {
+    const unbounded = fills.filter(
+      (token) => ratio(t[token], t["surface-raised"]) < 3 && !t[`${token}-edge`],
+    );
+    expect(unbounded).toEqual([]);
   });
 
   it("keeps the 'No data' label readable on its own fill", () => {
