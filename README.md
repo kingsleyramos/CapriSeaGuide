@@ -152,27 +152,47 @@ history builds up from the day you switch it on.
    `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Without them the recorder is inert
    and the app runs exactly as before. A plain Upstash setup also works via
    `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`.
-2. **Secret.** Set `POLL_SECRET` (any random string) as a Vercel env var, and add
-   the same value plus `POLL_URL` (`https://<domain>/api/poll-grotto`) as GitHub
-   repository secrets. Once the store is configured on a deployment this secret is
-   **required**: the poll endpoint fails closed (returns 500) if it is missing, so
-   a dropped or mistyped secret can never leave the endpoint open. Local dev is
-   exempt, so it still runs without one.
+2. **Secret.** Set `POLL_SECRET` (any random string) as a Vercel env var. Once the
+   store is configured on a deployment this secret is **required**: the poll
+   endpoint fails closed (returns 500) if it is missing, so a dropped or mistyped
+   secret can never leave the endpoint open. Local dev is exempt, so it still runs
+   without one.
+3. **Scheduler.** An [Upstash QStash](https://upstash.com/docs/qstash) schedule,
+   pointed at `https://<domain>/api/poll-grotto`:
 
-   `POLL_URL` must be the domain your site actually *serves* on, not one that
-   redirects to it. If your apex redirects to `www` (or the reverse), point at
-   the destination. The poller does not follow redirects, and a redirect is not
-   an HTTP error, so a redirecting URL would pass while recording nothing; the
-   workflow asserts a 2xx to catch that. Following redirects would not help
-   either: `curl` drops the `Authorization` header when one crosses to a
-   different host, so the hop would arrive unauthenticated and 401.
-3. **Scheduler.** [`.github/workflows/poll-grotto.yml`](.github/workflows/poll-grotto.yml)
-   polls every 15 min during opening hours (GitHub sheds scheduled runs, so the
-   extra attempts are what yield a roughly half-hourly reading). The endpoint
-   self-gates to opening
-   hours and stores only `{ time, status }`; sea conditions are reconstructed
-   from Open-Meteo. Readings are kept indefinitely; the card shows the
-   most recent 7 (`HISTORY_DAYS`).
+   | Field | Value |
+   | --- | --- |
+   | Cron | `7,37 9-17 * * *` |
+   | Timezone | `Europe/Paris` — see below |
+   | Method | `POST` |
+   | Header | `Upstash-Forward-Authorization` → `Bearer <POLL_SECRET>` |
+
+   That is a reading every 30 min through the open day, 18 messages daily against
+   a 1,000/day free tier. QStash strips the `Upstash-Forward-` prefix, so the
+   endpoint receives a plain `Authorization` header. Off-peak minutes are habit,
+   not superstition: this ran on a GitHub Actions cron first, which dropped
+   roughly 26 of 29 due runs and delivered the rest 5 to 94 minutes late.
+
+   The timezone is Capri's, but the console's list has no `Europe/Rome`.
+   `Europe/Paris` is exact — same CET/CEST offsets and the same EU switchover
+   dates, verified across a full year. Berlin, Madrid and Malta are equally
+   valid; Athens is an hour out and would poll before the cave opens. The API
+   accepts a literal `CRON_TZ=Europe/Rome` if you prefer it spelled honestly.
+
+   Point it at the domain the site actually *serves* on, not one that redirects:
+   a redirect is not an HTTP error, so it would report success while recording
+   nothing, and `Authorization` is dropped on a cross-host hop anyway (apex and
+   `www` count as different hosts).
+
+   The endpoint self-gates to opening hours and stores only `{ time, status }`;
+   sea conditions are reconstructed from Open-Meteo. Readings are kept
+   indefinitely; the card shows the most recent 7 (`HISTORY_DAYS`).
+
+   To record one by hand — the whole job is a single request:
+
+   ```bash
+   curl -s -X POST https://<domain>/api/poll-grotto -H "Authorization: Bearer $POLL_SECRET"
+   ```
 
 ## Data & disclaimer
 
