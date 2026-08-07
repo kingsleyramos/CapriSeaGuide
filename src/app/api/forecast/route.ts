@@ -1,8 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { LOCATION } from "@/config/tuning";
-import { PublicError, publicMessage } from "@/lib/errors";
-import { buildReport } from "@/lib/forecast/aggregate";
-import { fetchSources } from "@/lib/sources/open-meteo";
+import { publicMessage } from "@/lib/errors";
+import { loadReport } from "@/lib/forecast/load";
 
 /**
  * Dynamic, not ISR. `export const revalidate` puts this in Next's own cache,
@@ -21,13 +19,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "This endpoint takes no parameters." }, { status: 400 });
   }
   try {
-    const { raw, meta } = await fetchSources();
-    if (!raw.length) throw new PublicError("The forecast service returned no data.");
-    // fetchedAt is this response's generation time. The upstream Open-Meteo
-    // fetches have their own hourly Data Cache, so the served data can be
-    // slightly older than this stamp: "Updated …" means "assembled at", not
-    // "sensor time". The two caches share a 1h window and stay ~in lockstep.
-    const report = buildReport(raw, meta, Date.now(), LOCATION.timezone);
+    const report = await loadReport();
     return NextResponse.json(report, {
       headers: {
         // 5 min of grace, not 30: the page promises an hourly refresh, and the

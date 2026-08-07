@@ -21,13 +21,21 @@ import { TodayCards } from "./today-cards";
 const usable = (r: ForecastReport | null): r is ForecastReport =>
   !!r && r.hours.length > 0 && r.days.length > 0;
 
+interface ReportProps {
+  /** The forecast the page was rendered with; null if that load failed, in
+   *  which case this behaves exactly as it did before the page rendered one. */
+  initialReport?: ForecastReport | null;
+  /** The server's clock at render, so hydration reproduces the same strings. */
+  serverNow?: number;
+}
+
 /** Top-level client orchestrator: fetches data, holds the live clock, and
  *  derives every display string from the numeric report at render time. */
-export function Report() {
-  const { status, report, error, retry } = useForecast();
+export function Report({ initialReport, serverNow }: ReportProps) {
+  const { status, report, error, retry } = useForecast(initialReport);
   const { live, settled: liveSettled } = useGrotto();
   const { data: history, settled: historySettled } = useGrottoHistory();
-  const now = useNow(REFRESH.clockTickMs);
+  const now = useNow(REFRESH.clockTickMs, serverNow);
 
   if (status === "error" || (status === "ready" && !usable(report))) {
     return <ErrorReport message={error || COPY.states.genericError} onRetry={retry} />;
