@@ -13,11 +13,8 @@ export async function GET(req: NextRequest) {
   const live = await fetchGrottoStatus();
   return NextResponse.json(live, {
     headers: {
-      // Matched to the timeline below it. This chip and that bar describe the
-      // same cave, and at the old 1800 the chip could be half an hour behind the
-      // bar -- two elements disagreeing about the present, side by side. Kept in
-      // step with REVALIDATE_S in lib/sources/grotto: a shorter header alone
-      // would just re-serve the same cached scrape.
+      // Must stay in step with REVALIDATE_S in lib/sources/grotto, which caches
+      // the underlying scrape: shortening this alone would re-serve that copy.
       "Cache-Control": "public, s-maxage=600, stale-while-revalidate=120",
     },
   });

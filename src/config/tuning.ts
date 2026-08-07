@@ -186,14 +186,11 @@ export const SPREAD = {
 export const REFRESH = {
   intervalMs: 3_600_000, // hourly
   /**
-   * The two grotto endpoints while the cave is open. Matched to the CDN window
-   * on those routes rather than to the recorder: readings land every 10 min, but
-   * asking more often than the edge can hold a new answer only buys a second
-   * copy of the one we already have. Outside opening hours nothing is written at
-   * all, so both fall back to `intervalMs`.
-   *
-   * Doubles as the staleness threshold for the refetch-on-focus in
-   * use-grotto-polling, for the same reason.
+   * The two grotto endpoints while the cave is open, and the staleness threshold
+   * for their refetch-on-focus. Matched to the CDN window on those routes, not
+   * to the recorder: asking faster than the edge can hold a new answer only
+   * re-fetches the copy we hold. Outside opening hours nothing is written, so
+   * both fall back to `intervalMs`.
    */
   liveIntervalMs: 300_000, // 5 min
   staleAfterMs: 1_800_000, // 30 min

@@ -44,8 +44,7 @@ describe("updatedLine", () => {
   });
 
   it("names the day when the reading is not from today", () => {
-    // The bug this covers: yesterday's 06:31 rendered as a bare "06:31" beside a
-    // 06:06 clock, so the reading looked like it came from the future.
+    // Undated, yesterday's 06:31 reads as the future beside a 06:06 clock.
     const line = lineAt("2026-08-07T04:06:00Z", "2026-08-06T04:31:00Z");
     expect(line).toContain("06:31");
     expect(line).toContain("on 6 Aug");

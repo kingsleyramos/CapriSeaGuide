@@ -82,12 +82,8 @@ export const COPY = {
       pinned: "Theme set by you",
       action: "Switch theme",
     },
-    /**
-     * How long ago the reading was taken, in a unit the reader can hold in
-     * their head. Minutes stop being one of those quickly: a stall once showed
-     * "1414 min ago", and this label is only ever prominent when something has
-     * already gone wrong, which is exactly when it needs to be legible.
-     */
+    /** Steps units because this label is only prominent when something has
+     *  stalled, and "1414 min ago" is not a figure anyone converts in their head. */
     ago: (mins: number) => {
       if (mins < 90) return `(${mins} min ago)`;
       const hours = Math.round(mins / 60);
