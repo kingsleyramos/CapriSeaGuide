@@ -65,14 +65,15 @@
   --color-grotto-unknown: #6b7280;
   --color-grotto-offhours: #4b5563;
 
-  /* Timeline fills. Separate from the pill tokens they once borrowed: a pill
-     background sits under text, a fill sits on the card, and once the card is
-     dark those want opposite treatment. */
-  --color-bar-expected: #dcfce7;
-  --color-bar-possible: #fef3c7;
-  --color-bar-none: #f3f4f6;
+  /* Timeline fills, kept apart from the pill tokens: a pill background sits
+     under text, a fill sits on the card. Each clears 3:1 on the card (WCAG
+     1.4.11), and the three are stepped in lightness rather than hue alone, so
+     they survive colour blindness. Enforced by tokens.contrast.test.ts. */
+  --color-bar-expected: #55a373;
+  --color-bar-possible: #a1833c;
+  --color-bar-none: #6b7280;
   /* The "No data" label sits on the fill above, so it is paired with it. */
-  --color-bar-none-fg: #4b5563;
+  --color-bar-none-fg: #ffffff;
 
   /* Error state */
   --color-danger-line: #fecaca;
@@ -128,13 +129,13 @@
   --color-grotto-unknown: #8496ad;
   --color-grotto-offhours: #93a5c0;
 
-  /* Not in the spec. Derived to clear the 3:1 WCAG asks of a meaningful
-     graphic while staying quieter than the reported tones, which the spec makes
-     the bright ones here -- the reverse of daylight. */
+  /* Not in the spec. Derived to stay quieter than the reported tones, which the
+     spec makes the bright ones here -- the reverse of daylight. Same floors as
+     the day palette; "No data" is the light fill here, so its label inverts. */
   --color-bar-expected: #357252;
-  --color-bar-possible: #856828;
-  --color-bar-none: #5b6878;
-  --color-bar-none-fg: #e8eef7;
+  --color-bar-possible: #8f753a;
+  --color-bar-none: #7e8895;
+  --color-bar-none-fg: #0b1220;
 
   --color-danger-line: #5c2b2b;
   --color-danger-bg: #331513;
