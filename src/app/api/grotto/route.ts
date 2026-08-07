@@ -13,7 +13,9 @@ export async function GET(req: NextRequest) {
   const live = await fetchGrottoStatus();
   return NextResponse.json(live, {
     headers: {
-      "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=300",
+      // Must stay in step with REVALIDATE_S in lib/sources/grotto, which caches
+      // the underlying scrape: shortening this alone would re-serve that copy.
+      "Cache-Control": "public, s-maxage=600, stale-while-revalidate=120",
     },
   });
 }

@@ -30,7 +30,7 @@ public.
  Open-Meteo ensemble (51 members)  ┘        (cached hourly)         (view layer → copy)
 
  capri.net + bluegrotto.tours ─────▶ /api/grotto ─▶ cross-checked live status
-                                            (cached 30 min)
+                                            (cached 10 min)
 
  Open-Meteo (past 7d + today/tomorrow) ┐
  recorded calls (Upstash, optional)    ├▶ /api/grotto-history ─▶ today's bar + 7-day history
@@ -39,7 +39,16 @@ public.
 
 Everything that touches the network runs **server-side** in route handlers, so
 the browser never depends on public CORS proxies (the original prototype did).
-Responses are cached (`revalidate`) to match the page's refresh cadence.
+
+Every route is dynamic and bounds its own staleness with a `Cache-Control`
+header, deliberately rather than by `export const revalidate`: that puts a route
+in Next's ISR cache, whose expiry is a year, so on a quiet site the first visitor
+of the day is served whatever was last generated — 23 hours old, in one observed
+case — and only *then* triggers the regeneration that the *next* visitor gets.
+
+Freshness is the sum of three layers, and the slowest one sets the floor: how
+often the recorder writes (10 min), how long the CDN holds a response, and how
+often the client asks. There is no point tightening one past another.
 
 The client fetches `/api/forecast` and `/api/grotto` (plus `/api/grotto-history`
 for the grotto card), then re-derives all display text at render time from a live
@@ -152,27 +161,64 @@ history builds up from the day you switch it on.
    `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Without them the recorder is inert
    and the app runs exactly as before. A plain Upstash setup also works via
    `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`.
-2. **Secret.** Set `POLL_SECRET` (any random string) as a Vercel env var, and add
-   the same value plus `POLL_URL` (`https://<domain>/api/poll-grotto`) as GitHub
-   repository secrets. Once the store is configured on a deployment this secret is
-   **required**: the poll endpoint fails closed (returns 500) if it is missing, so
-   a dropped or mistyped secret can never leave the endpoint open. Local dev is
-   exempt, so it still runs without one.
+2. **Secret.** Set `POLL_SECRET` (any random string) as a Vercel env var. Once the
+   store is configured on a deployment this secret is **required**: the poll
+   endpoint fails closed (returns 500) if it is missing, so a dropped or mistyped
+   secret can never leave the endpoint open. Local dev is exempt, so it still runs
+   without one.
+3. **Scheduler.** An [Upstash QStash](https://upstash.com/docs/qstash) schedule,
+   pointed at `https://<domain>/api/poll-grotto`:
 
-   `POLL_URL` must be the domain your site actually *serves* on, not one that
-   redirects to it. If your apex redirects to `www` (or the reverse), point at
-   the destination. The poller does not follow redirects, and a redirect is not
-   an HTTP error, so a redirecting URL would pass while recording nothing; the
-   workflow asserts a 2xx to catch that. Following redirects would not help
-   either: `curl` drops the `Authorization` header when one crosses to a
-   different host, so the hop would arrive unauthenticated and 401.
-3. **Scheduler.** [`.github/workflows/poll-grotto.yml`](.github/workflows/poll-grotto.yml)
-   polls every 15 min during opening hours (GitHub sheds scheduled runs, so the
-   extra attempts are what yield a roughly half-hourly reading). The endpoint
-   self-gates to opening
-   hours and stores only `{ time, status }`; sea conditions are reconstructed
-   from Open-Meteo. Readings are kept indefinitely; the card shows the
-   most recent 7 (`HISTORY_DAYS`).
+   | Field | Value |
+   | --- | --- |
+   | Cron | `*/10 9-17 * * *` |
+   | Timezone | `Europe/Paris` — see below |
+   | Method | `POST` |
+   | Header | `Upstash-Forward-Authorization` → `Bearer <POLL_SECRET>` |
+
+   A reading every 10 min through the open day: 54 messages daily against a
+   1,000/day free tier, and ~1.4 MB of store per year. QStash strips the
+   `Upstash-Forward-` prefix, so the endpoint receives a plain `Authorization`
+   header.
+
+   The cadence is set by how precisely you want *transitions* placed, not by how
+   much data you want. Same-status readings collapse into one segment, so a
+   quiet day looks identical at any cadence; what changes is the error on the
+   one moment that matters. A closure at 11:05 is drawn at 11:10 here, and would
+   have been drawn at 11:30 on a half-hourly poll. The cost is three times the
+   traffic to two websites that are not ours, which is the real ceiling — not
+   the free tier.
+
+   Recreate the schedule from scratch with:
+
+   ```bash
+   curl -X POST "https://qstash.upstash.io/v2/schedules/https://<domain>/api/poll-grotto" \
+     -H "Authorization: Bearer $QSTASH_TOKEN" \
+     -H "Upstash-Cron: CRON_TZ=Europe/Rome */10 9-17 * * *" \
+     -H "Upstash-Method: POST" \
+     -H "Upstash-Forward-Authorization: Bearer $POLL_SECRET"
+   ```
+
+   The timezone is Capri's, but the console's list has no `Europe/Rome`.
+   `Europe/Paris` is exact — same CET/CEST offsets and the same EU switchover
+   dates, verified across a full year. Berlin, Madrid and Malta are equally
+   valid; Athens is an hour out and would poll before the cave opens. The API
+   accepts a literal `CRON_TZ=Europe/Rome` if you prefer it spelled honestly.
+
+   Point it at the domain the site actually *serves* on, not one that redirects:
+   a redirect is not an HTTP error, so it would report success while recording
+   nothing, and `Authorization` is dropped on a cross-host hop anyway (apex and
+   `www` count as different hosts).
+
+   The endpoint self-gates to opening hours and stores only `{ time, status }`;
+   sea conditions are reconstructed from Open-Meteo. Readings are kept
+   indefinitely; the card shows the most recent 7 (`HISTORY_DAYS`).
+
+   To record one by hand — the whole job is a single request:
+
+   ```bash
+   curl -s -X POST https://<domain>/api/poll-grotto -H "Authorization: Bearer $POLL_SECRET"
+   ```
 
 ## Data & disclaimer
 

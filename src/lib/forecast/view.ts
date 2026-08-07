@@ -154,10 +154,8 @@ export function buildNowView(
 
   const mins = Math.round((now.getTime() - fetchedAt) / 60000);
   const at = new Date(fetchedAt);
-  // Name the day when the reading is not from today. Without it the line is a
-  // bare clock time, so yesterday's 06:31 reads as half an hour into the future
-  // next to a 06:06 clock -- the one reading that is obviously broken is the one
-  // that looked fine.
+  // A bare clock time from another day reads as the future next to the live
+  // clock beside it, so a stale reading has to name its day.
   const sameDay = capriDay(at, timezone) === capriDay(now, timezone);
   const updatedLine =
     `${fmtTime(at, timezone)} ` +

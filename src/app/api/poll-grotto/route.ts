@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { publicMessage } from "@/lib/errors";
-import { isWithinGrottoHours } from "@/lib/forecast/grotto-view";
+import { isWithinGrottoHours } from "@/lib/forecast/grotto-hours";
 import { fetchGrottoStatus } from "@/lib/sources/grotto";
 import { isStoreConfigured, recordReading } from "@/lib/store/grotto-log";
 
@@ -19,11 +19,11 @@ function authorized(header: string | null, secret: string): boolean {
 }
 
 /**
- * Records one live Blue Grotto reading. Called by the scheduler (a GitHub
- * Actions cron) every 15 min. It self-gates to opening hours, so a fixed
- * schedule that fires slightly outside hours just no-ops cheaply.
+ * Records one live Blue Grotto reading. Called every 10 min during opening
+ * hours by an Upstash QStash schedule. It self-gates to opening hours anyway,
+ * so a call that drifts past a boundary just no-ops cheaply.
  *
- * Protect it by setting POLL_SECRET (also as the GitHub Actions secret). Locally
+ * Protect it by setting POLL_SECRET (also on the schedule). Locally
  * the store is inert so a missing secret is fine; but once the store is
  * configured (a real deployment), a missing secret fails closed rather than
  * silently leaving the endpoint open to anonymous callers.

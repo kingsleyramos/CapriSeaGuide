@@ -10,6 +10,7 @@
 
 import { COPY, type GrottoDisplayTone, type GrottoStatus } from "@/config/copy";
 import { GROTTO_HOURS, LOCATION } from "@/config/tuning";
+import { capriParts, isWithinGrottoHours } from "./grotto-hours";
 import { pct } from "./math";
 
 export interface GrottoView {
@@ -18,23 +19,6 @@ export interface GrottoView {
   line: string;
 }
 
-/** Capri-local hour (decimal) and month, for opening-hours checks. */
-function capriParts(now: Date, timezone: string) {
-  const wall = new Date(now.toLocaleString("en-US", { timeZone: timezone }));
-  return { hour: wall.getHours() + wall.getMinutes() / 60, month: wall.getMonth() };
-}
-
-/** Seasonal closing hour (24h decimal) for a given 0-indexed month. */
-export function grottoCloseHour(month: number): number {
-  return (GROTTO_HOURS.summerMonths as readonly number[]).includes(month)
-    ? GROTTO_HOURS.summerClose
-    : GROTTO_HOURS.winterClose;
-}
-
-export function isWithinGrottoHours(now: Date, timezone: string = LOCATION.timezone): boolean {
-  const { hour, month } = capriParts(now, timezone);
-  return hour >= GROTTO_HOURS.open && hour < grottoCloseHour(month);
-}
 
 export function buildGrottoView({
   verdict,
@@ -52,13 +36,12 @@ export function buildGrottoView({
   forecastGrottoProb: number;
 }): GrottoView {
   const c = COPY.grottoBar;
-  const { hour, month } = capriParts(now, timezone);
-  const within = hour >= GROTTO_HOURS.open && hour < grottoCloseHour(month);
+  const { minute } = capriParts(now, timezone);
 
   // Outside opening hours: closed because it is off-hours, regardless of the
   // day's weather verdict. This is the truthful state at, say, 9pm.
-  if (!within) {
-    const beforeOpen = hour < GROTTO_HOURS.open;
+  if (!isWithinGrottoHours(now, timezone)) {
+    const beforeOpen = minute < GROTTO_HOURS.open * 60;
     return {
       label: c.statusLabel.offHours,
       tone: "offHours",

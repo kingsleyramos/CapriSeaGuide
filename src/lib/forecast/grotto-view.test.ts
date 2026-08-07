@@ -2,27 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   buildGrottoTimeline,
   buildGrottoView,
-  grottoCloseHour,
-  isWithinGrottoHours,
   type GrottoTimelinePayload,
 } from "./grotto-view";
 
 const TZ = "Europe/Rome";
 const at = (iso: string) => new Date(iso);
-
-describe("grotto opening hours", () => {
-  it("uses seasonal close hours", () => {
-    expect(grottoCloseHour(7)).toBe(17.5); // August (summer)
-    expect(grottoCloseHour(0)).toBe(14); // January (winter)
-  });
-
-  it("checks against Capri local time", () => {
-    expect(isWithinGrottoHours(at("2026-08-04T10:00:00Z"), TZ)).toBe(true); // 12:00 Rome
-    expect(isWithinGrottoHours(at("2026-08-04T05:00:00Z"), TZ)).toBe(false); // 07:00 Rome
-    expect(isWithinGrottoHours(at("2026-08-04T18:00:00Z"), TZ)).toBe(false); // 20:00 Rome
-    expect(isWithinGrottoHours(at("2026-01-15T13:30:00Z"), TZ)).toBe(false); // 14:30 Rome, winter closes 14:00
-  });
-});
 
 describe("buildGrottoView state model", () => {
   const base = { conflict: false, timezone: TZ, forecastGrottoProb: 0.4 };
