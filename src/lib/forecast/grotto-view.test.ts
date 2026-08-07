@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { REFRESH } from "@/config/tuning";
 import {
   buildGrottoTimeline,
   buildGrottoView,
   grottoCloseHour,
+  grottoPollDelayMs,
   isWithinGrottoHours,
   type GrottoTimelinePayload,
 } from "./grotto-view";
@@ -135,5 +137,18 @@ describe("buildGrottoTimeline", () => {
     expect(days[0].bar[0].widthPct).toBeCloseTo(100, 5); // 09:00→17:30 fills the span
     expect(days[0].rows.map((r) => r.statusLabel)).toEqual(["No data", "No data"]);
     expect(days[0].rows[0].time).toBe("Morning");
+  });
+});
+
+describe("grottoPollDelayMs", () => {
+  it("polls on the live cadence inside hours and backs off outside", () => {
+    expect(grottoPollDelayMs(at("2026-08-04T10:00:00Z"))).toBe(REFRESH.liveIntervalMs); // 12:00 Rome
+    expect(grottoPollDelayMs(at("2026-08-04T20:00:00Z"))).toBe(REFRESH.intervalMs); // 22:00 Rome
+  });
+
+  // Guards the relationship, not the number: the client must not be the slowest
+  // layer, or readings are recorded that nobody is shown.
+  it("asks at least as often as the recorder writes", () => {
+    expect(REFRESH.liveIntervalMs).toBeLessThanOrEqual(10 * 60_000);
   });
 });

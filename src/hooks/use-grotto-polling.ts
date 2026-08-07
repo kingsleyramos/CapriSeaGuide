@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { REFRESH } from "@/config/tuning";
-import { grottoPollDelayMs } from "@/lib/forecast/grotto-actual";
+import { grottoPollDelayMs } from "@/lib/forecast/grotto-view";
 
 /**
  * Runs `load` on mount, on the grotto cadence, and when a hidden tab returns

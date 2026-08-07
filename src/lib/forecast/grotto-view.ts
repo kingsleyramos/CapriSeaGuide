@@ -9,7 +9,7 @@
  */
 
 import { COPY, type GrottoDisplayTone, type GrottoStatus } from "@/config/copy";
-import { GROTTO_HOURS, LOCATION } from "@/config/tuning";
+import { GROTTO_HOURS, LOCATION, REFRESH } from "@/config/tuning";
 import { pct } from "./math";
 
 export interface GrottoView {
@@ -35,6 +35,11 @@ export function isWithinGrottoHours(now: Date, timezone: string = LOCATION.timez
   const { hour, month } = capriParts(now, timezone);
   return hour >= GROTTO_HOURS.open && hour < grottoCloseHour(month);
 }
+
+/** How long the client waits before refetching the grotto endpoints. Nothing is
+ *  recorded outside opening hours, so there is nothing to poll for. */
+export const grottoPollDelayMs = (now: Date = new Date()): number =>
+  isWithinGrottoHours(now) ? REFRESH.liveIntervalMs : REFRESH.intervalMs;
 
 export function buildGrottoView({
   verdict,
