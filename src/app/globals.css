@@ -72,11 +72,6 @@
     --color-bar-expected: #7bcc86;
     --color-bar-possible: #d6b771;
     --color-bar-none: #8d93a0;
-    /* These two fills are lighter than 3:1 on the card, so the outline carries
-       the contrast instead -- 1.4.11 is satisfied by a boundary. "none" needs
-       none; its fill clears the floor unaided. */
-    --color-bar-expected-edge: #5f9e68;
-    --color-bar-possible-edge: #a58d57;
     /* The "No data" label sits on the fill above, so it is paired with it. */
     --color-bar-none-fg: #1f2937;
 
@@ -140,8 +135,6 @@
     --color-bar-expected: #357252;
     --color-bar-possible: #8f753a;
     --color-bar-none: #7e8895;
-    --color-bar-expected-edge: #65937b;
-    --color-bar-possible-edge: #9e8754;
     --color-bar-none-fg: #0b1220;
 
     --color-danger-line: #5c2b2b;

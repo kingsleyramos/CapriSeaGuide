@@ -42,25 +42,29 @@ const themes = {
   dark: palette(/:root\[data-theme=['"]dark['"]\]/),
 };
 
-describe.each(Object.entries(themes))("%s timeline tokens", (_name, t) => {
-  const fills = ["bar-expected", "bar-possible", "bar-none", "grotto-open", "grotto-closed"];
+/**
+ * Fills held below the 1.4.11 floor on purpose, appearance having won the
+ * argument. Listed rather than dropped from the suite: the deviation stays
+ * visible, and the lightness-spread check below still separates the states.
+ */
+const BELOW_FLOOR: Record<string, string[]> = {
+  light: ["bar-expected", "bar-possible"],
+  dark: [],
+};
 
-  // 1.4.11 asks the object to be distinguishable, not the fill specifically, so
-  // a light fill qualifies on the strength of its outline.
-  it.each(fills)("%s is bounded at 3:1 against the card, by fill or by edge", (token) => {
-    const edge = t[`${token}-edge`];
-    const best = Math.max(
-      ratio(t[token], t["surface-raised"]),
-      edge ? ratio(edge, t["surface-raised"]) : 0,
-    );
-    expect(best).toBeGreaterThanOrEqual(3);
+describe.each(Object.entries(themes))("%s timeline tokens", (name, t) => {
+  const fills = ["bar-expected", "bar-possible", "bar-none", "grotto-open", "grotto-closed"];
+  const held = fills.filter((token) => !BELOW_FLOOR[name].includes(token));
+
+  it.each(held)("%s clears 3:1 against the card it sits on", (token) => {
+    expect(ratio(t[token], t["surface-raised"])).toBeGreaterThanOrEqual(3);
   });
 
-  it("gives an edge to every fill that cannot carry 3:1 alone", () => {
-    const unbounded = fills.filter(
-      (token) => ratio(t[token], t["surface-raised"]) < 3 && !t[`${token}-edge`],
-    );
-    expect(unbounded).toEqual([]);
+  // Fails both ways: on a new fill dropping below, and on an exempt one being
+  // fixed without its exemption being removed.
+  it("is below the floor in exactly the places recorded above", () => {
+    const below = fills.filter((token) => ratio(t[token], t["surface-raised"]) < 3);
+    expect(below).toEqual(BELOW_FLOOR[name]);
   });
 
   it("keeps the 'No data' label readable on its own fill", () => {

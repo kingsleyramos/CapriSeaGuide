@@ -27,9 +27,7 @@ const GUTTER = "w-[76px] shrink-0";
 /** Right column that matches the history rows' chevron, so bars share a width. */
 const CHEVRON_COL = "size-4 shrink-0";
 
-/** Bar fill for a tone: solid for reported, pale for forecast, muted for none.
- *  The forecast pair carries an inset outline, which is what puts those two
- *  above the 3:1 their fills alone do not reach. */
+/** Bar fill for a tone: solid for reported, pale for forecast, muted for none. */
 function barFillClass(tone: TimelineBarSegment["tone"]): string {
   switch (tone) {
     case "open":
@@ -37,9 +35,9 @@ function barFillClass(tone: TimelineBarSegment["tone"]): string {
     case "closed":
       return "bg-grotto-closed";
     case "expectedOpen":
-      return "bg-bar-expected shadow-[inset_0_0_0_1px_var(--color-bar-expected-edge)]";
+      return "bg-bar-expected";
     case "possibleClosure":
-      return "bg-bar-possible shadow-[inset_0_0_0_1px_var(--color-bar-possible-edge)]";
+      return "bg-bar-possible";
     default:
       return "bg-bar-none";
   }
@@ -78,8 +76,8 @@ function Legend() {
     <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-ink-soft">
       <LegendSwatch className="bg-grotto-open" label={s.open} />
       <LegendSwatch className="bg-grotto-closed" label={s.closed} />
-      <LegendSwatch className={barFillClass("expectedOpen")} label={s.expectedOpen} />
-      <LegendSwatch className={barFillClass("possibleClosure")} label={s.possibleClosure} />
+      <LegendSwatch className="bg-bar-expected" label={s.expectedOpen} />
+      <LegendSwatch className="bg-bar-possible" label={s.possibleClosure} />
       <LegendSwatch className="bg-bar-none" label={s.none} />
     </div>
   );
