@@ -179,9 +179,13 @@ export async function GET(req: Request) {
       return { date, label: dayLabel(date), kind: "none", bar, rows };
     });
 
+    // Tighter than the forecast routes, because this is the one that visibly
+    // lags: a reading lands every 30 min and the bar is meant to show it. The
+    // old 900+1800 allowed a 45-minute ceiling, longer than the poll cadence it
+    // was reporting on, so a new reading could be recorded and still not appear.
     return NextResponse.json(
       { today, days },
-      { headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=1800" } },
+      { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60" } },
     );
   } catch (error) {
     return NextResponse.json(

@@ -34,7 +34,7 @@ public.
 
  Open-Meteo (past 7d + today/tomorrow) ┐
  recorded calls (Upstash, optional)    ├▶ /api/grotto-history ─▶ today's bar + 7-day history
-                                       ┘         (cached 15 min)
+                                       ┘         (cached 5 min)
 ```
 
 Everything that touches the network runs **server-side** in route handlers, so
@@ -167,7 +167,9 @@ history builds up from the day you switch it on.
    either: `curl` drops the `Authorization` header when one crosses to a
    different host, so the hop would arrive unauthenticated and 401.
 3. **Scheduler.** [`.github/workflows/poll-grotto.yml`](.github/workflows/poll-grotto.yml)
-   polls every 30 min during opening hours. The endpoint self-gates to opening
+   polls every 15 min during opening hours (GitHub sheds scheduled runs, so the
+   extra attempts are what yield a roughly half-hourly reading). The endpoint
+   self-gates to opening
    hours and stores only `{ time, status }`; sea conditions are reconstructed
    from Open-Meteo. Readings are kept indefinitely; the card shows the
    most recent 7 (`HISTORY_DAYS`).

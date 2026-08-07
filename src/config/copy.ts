@@ -82,7 +82,20 @@ export const COPY = {
       pinned: "Theme set by you",
       action: "Switch theme",
     },
-    minAgo: (mins: number) => `(${mins} min ago)`,
+    /**
+     * How long ago the reading was taken, in a unit the reader can hold in
+     * their head. Minutes stop being one of those quickly: a stall once showed
+     * "1414 min ago", and this label is only ever prominent when something has
+     * already gone wrong, which is exactly when it needs to be legible.
+     */
+    ago: (mins: number) => {
+      if (mins < 90) return `(${mins} min ago)`;
+      const hours = Math.round(mins / 60);
+      return hours < 36 ? `(${hours} h ago)` : `(${Math.round(hours / 24)} d ago)`;
+    },
+    /** Appended when the reading is not from today, so a bare clock time cannot
+     *  read as later than the clock beside it. */
+    onDate: (date: string) => `on ${date}`,
     statLabels: {
       waves: "Waves",
       swell: "Swell",

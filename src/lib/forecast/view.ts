@@ -64,6 +64,14 @@ const fmtTime = (d: Date, timezone: string) =>
     timeZone: timezone,
   });
 
+/** Capri-local calendar day, for "is this the same day" comparisons. */
+const capriDay = (d: Date, timezone: string) =>
+  d.toLocaleDateString("en-CA", { timeZone: timezone });
+
+/** e.g. "6 Aug" -- only ever shown alongside a time from another day. */
+const fmtDayMonth = (d: Date, timezone: string) =>
+  d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: timezone });
+
 const northerly = (wDir: number) =>
   (NORTHERLY_SAILOR as readonly string[]).includes(compass(wDir));
 
@@ -146,9 +154,16 @@ export function buildNowView(
 
   const mins = Math.round((now.getTime() - fetchedAt) / 60000);
   const at = new Date(fetchedAt);
+  // Name the day when the reading is not from today. Without it the line is a
+  // bare clock time, so yesterday's 06:31 reads as half an hour into the future
+  // next to a 06:06 clock -- the one reading that is obviously broken is the one
+  // that looked fine.
+  const sameDay = capriDay(at, timezone) === capriDay(now, timezone);
   const updatedLine =
-    `${fmtTime(at, timezone)} ${c.capriTimeSuffix}` +
-    (mins > REFRESH.agoThresholdMin ? ` ${c.minAgo(mins)}` : "");
+    `${fmtTime(at, timezone)} ` +
+    (sameDay ? "" : `${c.onDate(fmtDayMonth(at, timezone))} `) +
+    c.capriTimeSuffix +
+    (mins > REFRESH.agoThresholdMin ? ` ${c.ago(mins)}` : "");
 
   const capriNowLine =
     now.toLocaleDateString("en-GB", {

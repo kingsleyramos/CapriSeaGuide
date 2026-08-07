@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { deriveSegments, modeledSegments } from "./grotto-actual";
+import { REFRESH } from "@/config/tuning";
+import {
+  deriveSegments,
+  grottoPollDelayMs,
+  isWithinGrottoHours,
+  modeledSegments,
+} from "./grotto-actual";
 import type { GrottoReading } from "./types";
 
 const TZ = "Europe/Rome";
@@ -91,5 +97,31 @@ describe("modeledSegments", () => {
 
   it("returns nothing when there are no hours in the opening window", () => {
     expect(modeledSegments([], "2026-08-04")).toEqual([]);
+  });
+});
+
+describe("isWithinGrottoHours", () => {
+  // Summer closes at 17:30, winter at 14:00; both open at 09:00 Capri time.
+  it("brackets the summer day at 09:00 and 17:30", () => {
+    expect(isWithinGrottoHours(Date.parse("2026-08-04T06:59:00Z"), TZ)).toBe(false);
+    expect(isWithinGrottoHours(Date.parse("2026-08-04T07:00:00Z"), TZ)).toBe(true);
+    expect(isWithinGrottoHours(Date.parse("2026-08-04T15:29:00Z"), TZ)).toBe(true);
+    expect(isWithinGrottoHours(Date.parse("2026-08-04T15:30:00Z"), TZ)).toBe(false);
+  });
+
+  it("closes at 14:00 in winter, when Capri is UTC+1", () => {
+    expect(isWithinGrottoHours(Date.parse("2026-01-15T12:59:00Z"), TZ)).toBe(true);
+    expect(isWithinGrottoHours(Date.parse("2026-01-15T13:00:00Z"), TZ)).toBe(false);
+  });
+});
+
+describe("grottoPollDelayMs", () => {
+  it("polls on the recorder's cadence inside hours, and backs off outside", () => {
+    expect(grottoPollDelayMs(Date.parse("2026-08-04T10:00:00Z"))).toBe(REFRESH.liveIntervalMs);
+    expect(grottoPollDelayMs(Date.parse("2026-08-04T22:00:00Z"))).toBe(REFRESH.intervalMs);
+  });
+
+  it("stays inside the poll cadence it is meant to keep up with", () => {
+    expect(REFRESH.liveIntervalMs).toBeLessThan(30 * 60_000);
   });
 });
