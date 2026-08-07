@@ -186,13 +186,16 @@ export const SPREAD = {
 export const REFRESH = {
   intervalMs: 3_600_000, // hourly
   /**
-   * The two grotto endpoints while the cave is open. They move on the recorder's
-   * cadence, not the forecast's: a reading lands every 30 min, and on the hourly
-   * interval an open tab could sit a full hour behind one that had already been
-   * recorded and served. Outside opening hours nothing new is written, so both
-   * fall back to `intervalMs`.
+   * The two grotto endpoints while the cave is open. Matched to the CDN window
+   * on those routes rather than to the recorder: readings land every 10 min, but
+   * asking more often than the edge can hold a new answer only buys a second
+   * copy of the one we already have. Outside opening hours nothing is written at
+   * all, so both fall back to `intervalMs`.
+   *
+   * Doubles as the staleness threshold for the refetch-on-focus in
+   * use-grotto-polling, for the same reason.
    */
-  liveIntervalMs: 600_000, // 10 min
+  liveIntervalMs: 300_000, // 5 min
   staleAfterMs: 1_800_000, // 30 min
   clockTickMs: 60_000,
   /** "(n min ago)" only shows once the data is at least this old. */

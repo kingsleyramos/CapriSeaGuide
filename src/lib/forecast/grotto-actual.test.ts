@@ -121,7 +121,10 @@ describe("grottoPollDelayMs", () => {
     expect(grottoPollDelayMs(Date.parse("2026-08-04T22:00:00Z"))).toBe(REFRESH.intervalMs);
   });
 
-  it("stays inside the poll cadence it is meant to keep up with", () => {
-    expect(REFRESH.liveIntervalMs).toBeLessThan(30 * 60_000);
+  // Guards the relationship, not the number: the client must not be the slowest
+  // layer, or readings are recorded that nobody is shown.
+  it("asks at least as often as the recorder writes", () => {
+    const recorderCadenceMs = 10 * 60_000;
+    expect(REFRESH.liveIntervalMs).toBeLessThanOrEqual(recorderCadenceMs);
   });
 });

@@ -30,7 +30,7 @@ public.
  Open-Meteo ensemble (51 members)  ┘        (cached hourly)         (view layer → copy)
 
  capri.net + bluegrotto.tours ─────▶ /api/grotto ─▶ cross-checked live status
-                                            (cached 30 min)
+                                            (cached 10 min)
 
  Open-Meteo (past 7d + today/tomorrow) ┐
  recorded calls (Upstash, optional)    ├▶ /api/grotto-history ─▶ today's bar + 7-day history
@@ -39,7 +39,16 @@ public.
 
 Everything that touches the network runs **server-side** in route handlers, so
 the browser never depends on public CORS proxies (the original prototype did).
-Responses are cached (`revalidate`) to match the page's refresh cadence.
+
+Every route is dynamic and bounds its own staleness with a `Cache-Control`
+header, deliberately rather than by `export const revalidate`: that puts a route
+in Next's ISR cache, whose expiry is a year, so on a quiet site the first visitor
+of the day is served whatever was last generated — 23 hours old, in one observed
+case — and only *then* triggers the regeneration that the *next* visitor gets.
+
+Freshness is the sum of three layers, and the slowest one sets the floor: how
+often the recorder writes (10 min), how long the CDN holds a response, and how
+often the client asks. There is no point tightening one past another.
 
 The client fetches `/api/forecast` and `/api/grotto` (plus `/api/grotto-history`
 for the grotto card), then re-derives all display text at render time from a live
@@ -162,16 +171,33 @@ history builds up from the day you switch it on.
 
    | Field | Value |
    | --- | --- |
-   | Cron | `7,37 9-17 * * *` |
+   | Cron | `*/10 9-17 * * *` |
    | Timezone | `Europe/Paris` — see below |
    | Method | `POST` |
    | Header | `Upstash-Forward-Authorization` → `Bearer <POLL_SECRET>` |
 
-   That is a reading every 30 min through the open day, 18 messages daily against
-   a 1,000/day free tier. QStash strips the `Upstash-Forward-` prefix, so the
-   endpoint receives a plain `Authorization` header. Off-peak minutes are habit,
-   not superstition: this ran on a GitHub Actions cron first, which dropped
-   roughly 26 of 29 due runs and delivered the rest 5 to 94 minutes late.
+   A reading every 10 min through the open day: 54 messages daily against a
+   1,000/day free tier, and ~1.4 MB of store per year. QStash strips the
+   `Upstash-Forward-` prefix, so the endpoint receives a plain `Authorization`
+   header.
+
+   The cadence is set by how precisely you want *transitions* placed, not by how
+   much data you want. Same-status readings collapse into one segment, so a
+   quiet day looks identical at any cadence; what changes is the error on the
+   one moment that matters. A closure at 11:05 is drawn at 11:10 here, and would
+   have been drawn at 11:30 on a half-hourly poll. The cost is three times the
+   traffic to two websites that are not ours, which is the real ceiling — not
+   the free tier.
+
+   Recreate the schedule from scratch with:
+
+   ```bash
+   curl -X POST "https://qstash.upstash.io/v2/schedules/https://<domain>/api/poll-grotto" \
+     -H "Authorization: Bearer $QSTASH_TOKEN" \
+     -H "Upstash-Cron: CRON_TZ=Europe/Rome */10 9-17 * * *" \
+     -H "Upstash-Method: POST" \
+     -H "Upstash-Forward-Authorization: Bearer $POLL_SECRET"
+   ```
 
    The timezone is Capri's, but the console's list has no `Europe/Rome`.
    `Europe/Paris` is exact — same CET/CEST offsets and the same EU switchover

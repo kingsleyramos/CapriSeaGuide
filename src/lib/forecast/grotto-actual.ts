@@ -7,8 +7,10 @@
  *
  * The poller only runs during opening hours, so every reading falls inside them.
  * That means a status change from one reading to the next is a real weather flip,
- * not the normal daily open/close. Readings arrive about every 30 minutes, and
- * each day is capped at its season's closing time (see GROTTO_HOURS).
+ * not the normal daily open/close. Readings arrive every 10 minutes, so a
+ * boundary drawn here is accurate to within one poll -- the change is recorded
+ * when we looked, not when it happened. Each day is capped at its season's
+ * closing time (see GROTTO_HOURS).
  */
 
 import { GROTTO_FORECAST, GROTTO_HOURS, LOCATION, REFRESH } from "@/config/tuning";

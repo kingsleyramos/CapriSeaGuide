@@ -17,7 +17,10 @@ import type { GrottoLive } from "@/lib/forecast/types";
 type Status = "open" | "closed" | "unknown";
 
 const FETCH_TIMEOUT_MS = 12_000;
-const REVALIDATE_S = 1800; // 30 min
+/** The live-bar path only; the recorder passes `fresh` and bypasses this. Kept
+ *  in step with the Cache-Control on /api/grotto, and no shorter: every miss is
+ *  a request to someone else's website. */
+const REVALIDATE_S = 600; // 10 min
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/124.0 Safari/537.36";

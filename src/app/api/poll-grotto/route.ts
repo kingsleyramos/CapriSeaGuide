@@ -19,7 +19,7 @@ function authorized(header: string | null, secret: string): boolean {
 }
 
 /**
- * Records one live Blue Grotto reading. Called every 30 min during opening
+ * Records one live Blue Grotto reading. Called every 10 min during opening
  * hours by an Upstash QStash schedule. It self-gates to opening hours anyway,
  * so a call that drifts past a boundary just no-ops cheaply.
  *

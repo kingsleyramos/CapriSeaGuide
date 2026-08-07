@@ -180,9 +180,9 @@ export async function GET(req: Request) {
     });
 
     // Tighter than the forecast routes, because this is the one that visibly
-    // lags: a reading lands every 30 min and the bar is meant to show it. The
-    // old 900+1800 allowed a 45-minute ceiling, longer than the poll cadence it
-    // was reporting on, so a new reading could be recorded and still not appear.
+    // lags: a reading lands every 10 min and the bar is meant to show it. An
+    // earlier 900+1800 allowed a 45-minute ceiling, longer than the poll cadence
+    // it was reporting on, so a reading could be recorded and still not appear.
     return NextResponse.json(
       { today, days },
       { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=60" } },
