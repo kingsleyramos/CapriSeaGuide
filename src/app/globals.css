@@ -73,7 +73,7 @@
     --color-bar-possible: #d6b771;
     --color-bar-none: #8d93a0;
     /* The "No data" label sits on the fill above, so it is paired with it. */
-    --color-bar-none-fg: #1f2937;
+    --color-bar-none-fg: #ffffff;
 
     /* Error state */
     --color-danger-line: #fecaca;

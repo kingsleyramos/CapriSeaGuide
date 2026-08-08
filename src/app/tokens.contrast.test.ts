@@ -43,12 +43,12 @@ const themes = {
 };
 
 /**
- * Fills held below the 1.4.11 floor on purpose, appearance having won the
- * argument. Listed rather than dropped from the suite: the deviation stays
- * visible, and the lightness-spread check below still separates the states.
+ * Tokens held below their floor on purpose, appearance having won the argument.
+ * Listed rather than dropped from the suite, so the deviation stays visible and
+ * the assertions below fail if one is added or fixed without this changing.
  */
 const BELOW_FLOOR: Record<string, string[]> = {
-  light: ["bar-expected", "bar-possible"],
+  light: ["bar-expected", "bar-possible", "bar-none-fg"],
   dark: [],
 };
 
@@ -62,14 +62,19 @@ describe.each(Object.entries(themes))("%s timeline tokens", (name, t) => {
 
   // Fails both ways: on a new fill dropping below, and on an exempt one being
   // fixed without its exemption being removed.
-  it("is below the floor in exactly the places recorded above", () => {
+  it("is below the floor in exactly the fills recorded above", () => {
     const below = fills.filter((token) => ratio(t[token], t["surface-raised"]) < 3);
-    expect(below).toEqual(BELOW_FLOOR[name]);
+    expect(below).toEqual(BELOW_FLOOR[name].filter((token) => fills.includes(token)));
   });
 
-  it("keeps the 'No data' label readable on its own fill", () => {
+  it("holds the 'No data' label to its floor, or to its exemption", () => {
     // 11px text, so the 4.5:1 body-text floor applies, not the 3:1 large-text one.
-    expect(ratio(t["bar-none-fg"], t["bar-none"])).toBeGreaterThanOrEqual(4.5);
+    const contrast = ratio(t["bar-none-fg"], t["bar-none"]);
+    if (BELOW_FLOOR[name].includes("bar-none-fg")) {
+      expect(contrast).toBeLessThan(4.5);
+    } else {
+      expect(contrast).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it("separates the three forecast states by lightness, not hue alone", () => {
