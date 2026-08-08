@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 /*
  * Design tokens, extracted from the delivered design.
@@ -10,73 +10,74 @@
  * and status hues are the design's own.
  */
 @theme {
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
+    --font-sans:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+        Arial, sans-serif;
 
-  /* Ink + surfaces */
-  --color-ink: #111827;
-  --color-ink-soft: #4b5563;
-  /* #5f6875, not #6b7280: muted-on-muted measured 4.39:1, under AA. */
-  --color-ink-mute: #5f6875;
-  --color-ink-faint: #9ca3af;
-  /* Text on a saturated fill; inverts with the theme. */
-  --color-chip-ink: #ffffff;
-  --color-line: #e5e7eb;
-  --color-line-soft: #f3f4f6;
-  --color-surface: #ffffff;
-  --color-surface-raised: #ffffff;
-  --color-surface-soft: #f9fafb;
-  --color-surface-muted: #f3f4f6;
-  --color-link: #0b6aa9;
+    /* Ink + surfaces */
+    --color-ink: #111827;
+    --color-ink-soft: #4b5563;
+    /* #5f6875, not #6b7280: muted-on-muted measured 4.39:1, under AA. */
+    --color-ink-mute: #5f6875;
+    --color-ink-faint: #9ca3af;
+    /* Text on a saturated fill; inverts with the theme. */
+    --color-chip-ink: #ffffff;
+    --color-line: #e5e7eb;
+    --color-line-soft: #f3f4f6;
+    --color-surface: #ffffff;
+    --color-surface-raised: #ffffff;
+    --color-surface-soft: #f9fafb;
+    --color-surface-muted: #f3f4f6;
+    --color-link: #0b6aa9;
 
-  /* Verdict chip fills; their text is --color-chip-ink. */
-  --color-calm: #15803d;
-  --color-good: #3d7c28;
-  --color-uncertain: #b45309;
-  --color-likely: #c2410c;
-  --color-off: #dc2626;
-  /* #6b7280, not #9ca3af: chip text measured 2.54:1 on the old value. */
-  --color-none: #6b7280;
+    /* Verdict chip fills; their text is --color-chip-ink. */
+    --color-calm: #15803d;
+    --color-good: #3d7c28;
+    --color-uncertain: #b45309;
+    --color-likely: #c2410c;
+    --color-off: #dc2626;
+    /* #6b7280, not #9ca3af: chip text measured 2.54:1 on the old value. */
+    --color-none: #6b7280;
 
-  /* "Chance it's off" pills: foreground + background pairs */
-  --color-pill-low-fg: #15803d;
-  --color-pill-low-bg: #dcfce7;
-  --color-pill-mid-fg: #b45309;
-  --color-pill-mid-bg: #fef3c7;
-  --color-pill-high-fg: #b91c1c;
-  --color-pill-high-bg: #fee2e2;
-  --color-pill-none-fg: #6b7280;
-  --color-pill-none-bg: #f3f4f6;
+    /* "Chance it's off" pills: foreground + background pairs */
+    --color-pill-low-fg: #15803d;
+    --color-pill-low-bg: #dcfce7;
+    --color-pill-mid-fg: #b45309;
+    --color-pill-mid-bg: #fef3c7;
+    --color-pill-high-fg: #b91c1c;
+    --color-pill-high-bg: #fee2e2;
+    --color-pill-none-fg: #6b7280;
+    --color-pill-none-bg: #f3f4f6;
 
-  /* Confidence dot */
-  --color-conf-high: #15803d;
-  --color-conf-medium: #b45309;
-  --color-conf-low: #9ca3af;
+    /* Confidence dot */
+    --color-conf-high: #15803d;
+    --color-conf-medium: #b45309;
+    --color-conf-low: #9ca3af;
 
-  /* "Now" card background tints */
-  --color-tint-calm: #f0fdf4;
-  --color-tint-uncertain: #fffbeb;
-  --color-tint-off: #fef2f2;
+    /* "Now" card background tints */
+    --color-tint-calm: #f0fdf4;
+    --color-tint-uncertain: #fffbeb;
+    --color-tint-off: #fef2f2;
 
-  /* Live grotto status */
-  --color-grotto-open: #15803d;
-  --color-grotto-closed: #dc2626;
-  --color-grotto-unknown: #6b7280;
-  --color-grotto-offhours: #4b5563;
+    /* Live grotto status */
+    --color-grotto-open: #15803d;
+    --color-grotto-closed: #dc2626;
+    --color-grotto-unknown: #6b7280;
+    --color-grotto-offhours: #4b5563;
 
-  /* Timeline fills. Separate from the pill tokens they once borrowed: a pill
-     background sits under text, a fill sits on the card, and once the card is
-     dark those want opposite treatment. */
-  --color-bar-expected: #dcfce7;
-  --color-bar-possible: #fef3c7;
-  --color-bar-none: #f3f4f6;
-  /* The "No data" label sits on the fill above, so it is paired with it. */
-  --color-bar-none-fg: #4b5563;
+    /* Timeline fills, kept apart from the pill tokens: a pill background sits
+     under text, a fill sits on the card. Each clears 3:1 on the card (WCAG
+     1.4.11), and the three are stepped in lightness rather than hue alone, so
+     they survive colour blindness. Enforced by tokens.contrast.test.ts. */
+    --color-bar-expected: #7bcc86;
+    --color-bar-possible: #d6b771;
+    --color-bar-none: #8d93a0;
+    /* The "No data" label sits on the fill above, so it is paired with it. */
+    --color-bar-none-fg: #ffffff;
 
-  /* Error state */
-  --color-danger-line: #fecaca;
-  --color-danger-bg: #fef2f2;
+    /* Error state */
+    --color-danger-line: #fecaca;
+    --color-danger-bg: #fef2f2;
 }
 
 /*
@@ -85,90 +86,89 @@
  * dark page reads muddy. The card tints carry their meaning in hue rather than
  * lightness, staying at ~1.2:1 against the page so they keep quiet.
  */
-:root[data-theme="dark"] {
-  --color-ink: #e8eef7;
-  --color-ink-soft: #a9b8cd;
-  --color-ink-mute: #7d8da5;
-  --color-ink-faint: #6f7f97;
-  --color-chip-ink: #0b1220;
-  --color-line: #24334d;
-  --color-line-soft: #1b2740;
-  --color-surface: #0b1220;
-  --color-surface-raised: #111a2b;
-  --color-surface-soft: #0f1829;
-  --color-surface-muted: #16223a;
-  --color-link: #4aa8e0;
+:root[data-theme='dark'] {
+    --color-ink: #e8eef7;
+    --color-ink-soft: #a9b8cd;
+    --color-ink-mute: #7d8da5;
+    --color-ink-faint: #6f7f97;
+    --color-chip-ink: #0b1220;
+    --color-line: #24334d;
+    --color-line-soft: #1b2740;
+    --color-surface: #0b1220;
+    --color-surface-raised: #111a2b;
+    --color-surface-soft: #0f1829;
+    --color-surface-muted: #16223a;
+    --color-link: #4aa8e0;
 
-  --color-calm: #4cc47d;
-  --color-good: #7ab850;
-  --color-uncertain: #e0a33a;
-  --color-likely: #f08a4b;
-  --color-off: #f4736f;
-  --color-none: #8496ad;
+    --color-calm: #4cc47d;
+    --color-good: #7ab850;
+    --color-uncertain: #e0a33a;
+    --color-likely: #f08a4b;
+    --color-off: #f4736f;
+    --color-none: #8496ad;
 
-  --color-pill-low-fg: #86efac;
-  --color-pill-low-bg: #244d33;
-  --color-pill-mid-fg: #fcd34d;
-  --color-pill-mid-bg: #573f18;
-  --color-pill-high-fg: #fca5a5;
-  --color-pill-high-bg: #6a3232;
-  --color-pill-none-fg: #a9b8cd;
-  --color-pill-none-bg: #263450;
+    --color-pill-low-fg: #86efac;
+    --color-pill-low-bg: #244d33;
+    --color-pill-mid-fg: #fcd34d;
+    --color-pill-mid-bg: #573f18;
+    --color-pill-high-fg: #fca5a5;
+    --color-pill-high-bg: #6a3232;
+    --color-pill-none-fg: #a9b8cd;
+    --color-pill-none-bg: #263450;
 
-  --color-conf-high: #86efac;
-  --color-conf-medium: #fcd34d;
-  --color-conf-low: #8496ad;
+    --color-conf-high: #86efac;
+    --color-conf-medium: #fcd34d;
+    --color-conf-low: #8496ad;
 
-  --color-tint-calm: #0a2c1a;
-  --color-tint-uncertain: #2e2109;
-  --color-tint-off: #331513;
+    --color-tint-calm: #0a2c1a;
+    --color-tint-uncertain: #2e2109;
+    --color-tint-off: #331513;
 
-  --color-grotto-open: #4cc47d;
-  --color-grotto-closed: #f4736f;
-  --color-grotto-unknown: #8496ad;
-  --color-grotto-offhours: #93a5c0;
+    --color-grotto-open: #4cc47d;
+    --color-grotto-closed: #f4736f;
+    --color-grotto-unknown: #8496ad;
+    --color-grotto-offhours: #93a5c0;
 
-  /* Not in the spec. Derived to clear the 3:1 WCAG asks of a meaningful
-     graphic while staying quieter than the reported tones, which the spec makes
-     the bright ones here -- the reverse of daylight. */
-  --color-bar-expected: #357252;
-  --color-bar-possible: #856828;
-  --color-bar-none: #5b6878;
-  --color-bar-none-fg: #e8eef7;
+    /* Not in the spec. Derived to stay quieter than the reported tones, which the
+     spec makes the bright ones here -- the reverse of daylight. Same floors as
+     the day palette; "No data" is the light fill here, so its label inverts. */
+    --color-bar-expected: #357252;
+    --color-bar-possible: #8f753a;
+    --color-bar-none: #7e8895;
+    --color-bar-none-fg: #0b1220;
 
-  --color-danger-line: #5c2b2b;
-  --color-danger-bg: #331513;
+    --color-danger-line: #5c2b2b;
+    --color-danger-bg: #331513;
 }
 
 html,
 body {
-  margin: 0;
-  padding: 0;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-  background: var(--color-surface);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-  /* Palettes swap at sunrise and sunset, mid-read. */
-  transition:
-    background-color 400ms ease,
-    color 400ms ease;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    /* Palettes swap at sunrise and sunset, mid-read. */
+    transition:
+        background-color 400ms ease,
+        color 400ms ease;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 a {
-  color: var(--color-link);
-  text-decoration: none;
+    color: var(--color-link);
+    text-decoration: none;
 }
 a:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body {
-    transition: none;
-  }
+    body {
+        transition: none;
+    }
 }
-

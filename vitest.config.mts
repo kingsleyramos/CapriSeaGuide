@@ -8,7 +8,9 @@ export default defineConfig({
     },
   },
   test: {
+    // node by default so the pure-logic suites stay fast; the few tests that
+    // need a DOM opt in with a `@vitest-environment jsdom` docblock.
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });

@@ -18,12 +18,14 @@ interface ForecastState {
  * backgrounded tab is refocused after the data has gone stale. A failed refresh
  * quietly keeps the last good report; only a failed first load surfaces.
  */
-export function useForecast() {
-  const [state, setState] = useState<ForecastState>({
-    status: "loading",
-    report: null,
-    error: "",
-  });
+export function useForecast(initial?: ForecastReport | null) {
+  // Seeded from the server-rendered page, so the first paint is the report. The
+  // mount fetch still runs: the seed is only as fresh as the HTML it arrived in.
+  const [state, setState] = useState<ForecastState>(() =>
+    initial
+      ? { status: "ready", report: initial, error: "" }
+      : { status: "loading", report: null, error: "" },
+  );
   const lastLoad = useRef(0);
   const reqId = useRef(0);
 
