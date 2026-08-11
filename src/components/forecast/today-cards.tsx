@@ -8,7 +8,7 @@ function TodaySlotCard({ card }: { card: TodayCardView }) {
     <Card className="p-5">
       <div className="mb-3 flex items-center justify-between gap-2.5">
         <div>
-          <div className="text-base font-bold text-ink">{card.title}</div>
+          <h2 className="text-base font-bold text-ink">{card.title}</h2>
           <div className="text-[12.5px] font-medium text-ink-mute">{card.sub}</div>
         </div>
         <VerdictChip tone={card.verdict.tone}>{card.verdict.label}</VerdictChip>
