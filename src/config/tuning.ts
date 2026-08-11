@@ -101,6 +101,13 @@ export const GROTTO_HOURS = {
   summerMonths: [3, 4, 5, 6, 7, 8, 9],
 } as const;
 
+/**
+ * Furthest day ahead that still earns hour-by-hour detail. Past this the models
+ * no longer resolve hour-to-hour variation, so distinct percentages would be
+ * detail invented from noise, and read as more certain than the average.
+ */
+export const HOURLY_MAX_LEAD = 1;
+
 /** How many past days the Blue Grotto history shows. */
 export const HISTORY_DAYS = 7;
 
