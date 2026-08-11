@@ -15,6 +15,26 @@
  *
  * These numbers are the designer's calibration. Change them here. Nothing in
  * the engine hard-codes an activity threshold.
+ *
+ * `waveMid` is anchored to the Douglas sea scale -- the vocabulary the
+ * Capitaneria and the Italian press use ("mare forza 4"):
+ *
+ *   Douglas 3, Slight    0.50-1.25 m
+ *   Douglas 4, Moderate  1.25-2.50 m
+ *   Douglas 5, Rough     2.50-4.00 m
+ *
+ * Each `waveMid` is the height at which that activity is a coin flip:
+ *
+ *   kayak 0.60, grottos 0.62   low Slight -- small craft and a low cave mouth
+ *   swim 0.85, faraglioni 0.95 mid Slight
+ *   tour 1.15                  top of Slight, just under Moderate
+ *   fPos 1.35, charter 1.40    entering Moderate; the Amalfi run is exposed
+ *   fSor 1.85, fNap 2.00       mid Moderate, matching Italian reporting that
+ *                              hydrofoils stop around 1.5-2 m
+ *   fBig 2.70                  entering Rough: car ferries run through Moderate
+ *
+ * `waveK` (curve steepness) is not sourced: it claims how well we know the
+ * midpoint, not anything about the sea. Judgement until the archive can score it.
  */
 
 export type ActivityKey =

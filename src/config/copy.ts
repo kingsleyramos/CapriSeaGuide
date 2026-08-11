@@ -11,7 +11,7 @@
  * and ./activities. This file only decides how conditions are described.
  */
 
-import { ACTIVITY_DOUBT, type VerdictTone } from "./tuning";
+import { ACTIVITY_DOUBT, HEAD_WEIGHTS, VERDICT_BANDS, type VerdictTone } from "./tuning";
 
 export type ConfidenceTone = "high" | "medium" | "low";
 export type GrottoStatus = "open" | "closed" | "unknown";
@@ -19,6 +19,18 @@ export type GrottoStatus = "open" | "closed" | "unknown";
 export type GrottoDisplayTone = "open" | "closed" | "offHours" | "unknown";
 export type SlotTrend = "worse" | "better" | null;
 export type PatternBand = "fallingFast" | "easing" | "building" | "steady";
+
+/** Verdict chip wording. Hoisted out of COPY so the methodology can be
+ *  generated from it rather than transcribing it by hand. */
+const VERDICT_LABEL = {
+  calm: "Calm",
+  good: "Good",
+  uncertain: "Uncertain",
+  likelyOff: "Likely off",
+  off: "Off",
+} satisfies Record<VerdictTone, string>;
+
+const asPct = (p: number) => `${Math.round(p * 100)}%`;
 
 /** Thresholds that decide which *sentence* is shown (wording, not model tuning). */
 export const SUMMARY_THRESHOLDS = {
@@ -209,13 +221,7 @@ export const COPY = {
     tomorrowPrefix: "Tomorrow",
   },
 
-  verdictLabel: {
-    calm: "Calm",
-    good: "Good",
-    uncertain: "Uncertain",
-    likelyOff: "Likely off",
-    off: "Off",
-  } satisfies Record<VerdictTone, string>,
+  verdictLabel: VERDICT_LABEL,
 
   confidenceShort: {
     high: "High confidence",
@@ -328,12 +334,23 @@ export const COPY = {
       {
         lead: "The percentages.",
         body:
-          "Each one is the chance that activity is closed or cancelled in that time slot. Every activity has its own breaking point: the Blue Grotto's mouth is barely a metre high, so it closes once swell lifts the entrance water 30–40 cm. It faces northwest, so N/NW/WNW swell or wind hits it head-on while a southerly barely reaches it. Boat tours give up around 1.2 m or 18 kt. Hydrofoils cancel before car ferries; Amalfi Coast routes before both.",
+          // Only sourced figures here. A number the code merely tunes must not
+          // be quoted as though it had been measured at the cave.
+          "Each one is the chance that activity is closed or cancelled in that time slot. Every activity has its own breaking point: the Blue Grotto's mouth is barely a metre high, so very little rise at the entrance is enough to stop the boats. It faces northwest, so N/NW/WNW swell or wind hits it head-on while a southerly barely reaches it. Boat tours give up around 1.2 m or 18 kt. Hydrofoils cancel before car ferries; Amalfi Coast routes before both.",
       },
       {
         lead: "The verdict chips.",
+        // Generated from the constants, so the prose cannot drift from them.
         body:
-          "Calm (under 13% chance sea activities are cancelled), Good (to 30%), Uncertain (to 50%), Likely off (to 72%), Off (above). The figure weighs the Blue Grotto at 62% and a boat tour at 38%, since those are the plans that break first.",
+          VERDICT_BANDS.filter((b) => Number.isFinite(b.max))
+            .map(
+              (b, i) =>
+                `${VERDICT_LABEL[b.tone]} (${i === 0 ? "under " : "to "}${asPct(b.max)} chance sea activities are cancelled)`,
+            )
+            .join(", ") +
+          `, ${VERDICT_LABEL.off} (above). The figure weighs the Blue Grotto at ${asPct(
+            HEAD_WEIGHTS.grotto ?? 0,
+          )} and a boat tour at ${asPct(HEAD_WEIGHTS.tour ?? 0)}, since those are the plans that break first.`,
       },
       {
         lead: "The confidence line.",
