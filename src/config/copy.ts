@@ -11,7 +11,7 @@
  * and ./activities. This file only decides how conditions are described.
  */
 
-import type { VerdictTone } from "./tuning";
+import { ACTIVITY_DOUBT, type VerdictTone } from "./tuning";
 
 export type ConfidenceTone = "high" | "medium" | "low";
 export type GrottoStatus = "open" | "closed" | "unknown";
@@ -24,7 +24,7 @@ export type PatternBand = "fallingFast" | "easing" | "building" | "steady";
 export const SUMMARY_THRESHOLDS = {
   grottoShut: 0.8,
   grottoRefuse: 0.55,
-  grottoBorderline: 0.3,
+  grottoBorderline: ACTIVITY_DOUBT,
   tourRough: 0.4,
 } as const;
 
@@ -117,7 +117,8 @@ export const COPY = {
     } satisfies Record<GrottoDisplayTone, string>,
     line: {
       open: "The grotto can be visited today, weather permitting. The boatmen make the final call at the cave.",
-      weatherClosed: "Reported closed by sea conditions today. It can reopen the same day.",
+      // No cause: the source publishes "closed", never a reason for it.
+      weatherClosed: "Reported closed today. The boatmen decide at the cave, and it can reopen the same day.",
       offHoursBeforeOpen: "Outside opening hours. Opens around 09:00.",
       offHoursAfterClose: "Closed for the day. Opens again tomorrow around 09:00.",
       unknown: "The live report couldn't be read right now.",
@@ -231,10 +232,13 @@ export const COPY = {
     grotto,
     tour,
     northerly,
+    reportedClosed = false,
   }: {
     grotto: number;
     tour: number;
     northerly: boolean;
+    /** The cave is shut right now, whatever the model expected. */
+    reportedClosed?: boolean;
   }): string {
     const t = SUMMARY_THRESHOLDS;
     if (grotto > t.grottoShut) {
@@ -244,6 +248,10 @@ export const COPY = {
     }
     if (grotto > t.grottoRefuse)
       return "Rough at the Blue Grotto. The boatmen often refuse entry in these conditions.";
+    // Below this the model expects it open, so say the disagreement out loud
+    // instead of reporting calm above a closed cave.
+    if (reportedClosed)
+      return "The sea reads calm, but the boatmen have closed the Blue Grotto today.";
     if (grotto > t.grottoBorderline)
       return "Borderline at the Blue Grotto. Likely open, but it's a judgment call at the cave.";
     if (tour > t.tourRough)

@@ -69,3 +69,29 @@ describe("ago", () => {
     expect(ago(4320)).toBe("(3 d ago)");
   });
 });
+
+describe("an observation outranks the forecast", () => {
+  // Regression: a headline of "no weather closures expected" above a red CLOSED
+  // chip, from a summary that only ever saw the model.
+  const calmDay = "2026-08-07T10:00:00Z"; // 12:00 Capri, inside opening hours
+  const line = (reported?: "open" | "closed" | "unknown") =>
+    buildNowView(hours, Date.parse(calmDay), new Date(Date.parse(calmDay)), TZ, reported).headline;
+
+  it("says the sea is calm when nothing contradicts it", () => {
+    expect(line()).toMatch(/no weather closures expected/i);
+    expect(line("open")).toMatch(/no weather closures expected/i);
+  });
+
+  it("names the disagreement when the boatmen have closed a calm sea", () => {
+    expect(line("closed")).toMatch(/boatmen have closed/i);
+    expect(line("closed")).not.toMatch(/no weather closures expected/i);
+  });
+
+  it("ignores a reported closure outside opening hours", () => {
+    // 02:00 Capri: the cave is shut because it is the middle of the night, which
+    // says nothing about the sea.
+    const night = Date.parse("2026-08-07T00:00:00Z");
+    const headline = buildNowView(hours, night, new Date(night), TZ, "closed").headline;
+    expect(headline).toMatch(/no weather closures expected/i);
+  });
+});

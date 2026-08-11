@@ -27,7 +27,9 @@ describe("buildGrottoView state model", () => {
 
     const closed = buildGrottoView({ ...base, verdict: "closed", now: noon });
     expect(closed.tone).toBe("closed");
-    expect(closed.line).toMatch(/sea conditions/);
+    expect(closed.line).toMatch(/reported closed/i);
+    // The source publishes "closed" and no reason, so neither do we.
+    expect(closed.line).not.toMatch(/sea conditions/i);
   });
 
   it("falls back to forecast odds when the verdict is unknown during hours", () => {

@@ -11,7 +11,7 @@
  * module that knows Open-Meteo's URL shape and column-naming scheme.
  */
 
-import { FORECAST_DAYS, HISTORY_DAYS, LOCATION, SOURCES } from "@/config/tuning";
+import { FORECAST_DAYS, GROTTO, HISTORY_DAYS, LOCATION, SOURCES } from "@/config/tuning";
 import { PublicError } from "@/lib/errors";
 import { mean, std } from "@/lib/forecast/math";
 import type { RawHour, SourceMeta } from "@/lib/forecast/types";
@@ -153,18 +153,26 @@ export function normalize(
     const swellPer = acrossModels(mh, "swell_wave_period", M, i);
     const wavePer = acrossModels(mh, "wave_period", M, i);
     const per = swellPer.length ? mean(swellPer) : wavePer.length ? mean(wavePer) : 5;
-    const swellDir = acrossModels(mh, "swell_wave_direction", M, i);
-    const waveDir = acrossModels(mh, "wave_direction", M, i);
-    const wDir = swellDir.length
-      ? circularMean(swellDir)
-      : waveDir.length
-        ? circularMean(waveDir)
-        : 0;
-
     // Weather consensus (j may be missing if the time axes differ)
     const winds = j != null ? acrossModels(wh, "wind_speed_10m", W, j) : [];
     const wind = winds.length ? mean(winds) : 0;
     const dirs = j != null ? acrossModels(wh, "wind_direction_10m", W, j) : [];
+
+    const swellDir = acrossModels(mh, "swell_wave_direction", M, i);
+    const waveDir = acrossModels(mh, "wave_direction", M, i);
+    /*
+     * Wind direction is the third choice because seas mostly run with the wind
+     * and comes from different models, so it survives a marine outage. With no
+     * direction at all, fall back to the grotto's own bearing: full exposure,
+     * rather than a value that quietly argues in the cave's favour.
+     */    const wDir = swellDir.length
+      ? circularMean(swellDir)
+      : waveDir.length
+        ? circularMean(waveDir)
+        : dirs.length
+          ? circularMean(dirs)
+          : GROTTO.faceBearing;
+
     const dir = dirs.length ? circularMean(dirs) : wDir;
     const gusts = j != null ? acrossModels(wh, "wind_gusts_10m", W, j) : [];
     const gust = gusts.length ? mean(gusts) : wind * 1.45;
