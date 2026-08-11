@@ -9,7 +9,7 @@ const M = COPY.methodology;
 export function Methodology({ updatedLine }: { updatedLine?: string }) {
   return (
     <Card className="p-5">
-      <div className="mb-3 text-base font-bold">{M.title}</div>
+      <h2 className="mb-3 text-base font-bold">{M.title}</h2>
 
       <div className="grid max-w-[82ch] gap-3 text-sm leading-relaxed text-ink-soft">
         {M.sections.map((s) => (
@@ -19,7 +19,7 @@ export function Methodology({ updatedLine }: { updatedLine?: string }) {
         ))}
 
         <div className="border-t border-line-soft pt-3.5">
-          <div className="mb-2.5 text-sm font-bold text-ink">{M.roughSeas.title}</div>
+          <h3 className="mb-2.5 text-sm font-bold text-ink">{M.roughSeas.title}</h3>
           <div className="grid gap-2.5">
             {M.roughSeas.points.map((p) => (
               <div key={p}>{p}</div>
@@ -28,7 +28,7 @@ export function Methodology({ updatedLine }: { updatedLine?: string }) {
         </div>
 
         <div className="border-t border-line-soft pt-3.5">
-          <div className="mb-2.5 text-sm font-bold text-ink">{M.sources.title}</div>
+          <h3 className="mb-2.5 text-sm font-bold text-ink">{M.sources.title}</h3>
           <div className="grid gap-2.5">
             <div>{M.sources.intro}</div>
             {M.sources.contacts.map((c) => (
