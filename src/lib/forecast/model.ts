@@ -39,6 +39,17 @@ export function grottoProb(h: ProbInputs): number {
   const swellFace = cosFace(h.wDir, g.faceBearing);
   const windFace = cosFace(h.dir, g.faceBearing);
 
+  /*
+   * Tide is deliberately absent. Geometry argues for it -- a ~1 m mouth against
+   * the Gulf of Naples' ~41 cm swing -- but that swing is wider than this
+   * curve's entire 10-90% transition (see tide.test), so coupling them predicts
+   * the cave closing and reopening twice daily in fair weather. The record
+   * shows at most one change a day.
+   *
+   * Either the coupling is weaker than geometry suggests or this curve is too
+   * sharp, and its steepness is unsourced too. Tide is retrievable for any past
+   * date, so nothing is lost by waiting for the archive to settle it.
+   */
   const effectiveWave = h.wave * swellFace * perFactor;
   let p = logistic(effectiveWave, g.effectiveWave.mid, g.effectiveWave.k);
   p = orProb(p, logistic(h.wind * windFace, g.wind.mid, g.wind.k) * g.wind.weight);
