@@ -1,9 +1,18 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { publicMessage } from "@/lib/errors";
-import { isWithinGrottoHours } from "@/lib/forecast/grotto-hours";
+import { capriParts, isWithinGrottoHours } from "@/lib/forecast/grotto-hours";
+import { loadReport } from "@/lib/forecast/load";
+import { MODEL_VERSION } from "@/lib/forecast/model-version";
+import { noUsableReading, pastRecorderGrace } from "@/lib/forecast/recorder-health";
+import type { GrottoLive } from "@/lib/forecast/types";
 import { fetchGrottoStatus } from "@/lib/sources/grotto";
-import { isStoreConfigured, recordReading } from "@/lib/store/grotto-log";
+import {
+  isStoreConfigured,
+  recordObservation,
+  recordReading,
+  readReadings,
+} from "@/lib/store/grotto-log";
 
 /** Never cached: each call records a fresh reading. */
 export const dynamic = "force-dynamic";
@@ -53,11 +62,62 @@ export async function POST(req: Request) {
   try {
     const live = await fetchGrottoStatus();
     await recordReading({ t: now.getTime(), status: live.status, conflict: live.conflict });
+    await archive(now, live);
+
+    // A broken scraper returns "unknown" forever and still answers 200, so a 500
+    // is the only thing the scheduler will surface. Gated on a whole silent
+    // morning, so a single bad scrape stays quiet.
+    if (live.status === "unknown" && (await noUsableReadingToday(now))) {
+      return NextResponse.json(
+        { error: "no open/closed reading recorded today; the sources may have changed" },
+        { status: 500 },
+      );
+    }
+
     return NextResponse.json({ recorded: live.status, at: now.getTime() });
   } catch (error) {
     return NextResponse.json(
       { error: publicMessage(error, "poll failed") },
       { status: 500 },
     );
+  }
+}
+
+/** True when the cave has been open a while and nothing definitive has landed.
+ *  Time check first, so a healthy poll never reads the store. */
+async function noUsableReadingToday(now: Date): Promise<boolean> {
+  if (!pastRecorderGrace(now)) return false;
+  const { minute } = capriParts(now);
+  const startOfDay = now.getTime() - minute * 60_000;
+  return noUsableReading(await readReadings(startOfDay, now.getTime()));
+}
+
+/** Best-effort: the archive is research data, and losing a row must never cost
+ *  a reading on the timeline. */
+async function archive(now: Date, live: GrottoLive): Promise<void> {
+  try {
+    const report = await loadReport();
+    const { date, hour } = capriParts(now);
+    const h = report.hours.find((x) => x.date === date && x.hour === hour);
+    if (!h) return;
+    await recordObservation({
+      t: now.getTime(),
+      status: live.status,
+      conflict: live.conflict,
+      predicted: h.probs.grotto,
+      model: MODEL_VERSION,
+      inputs: {
+        wave: h.wave,
+        swell: h.swell,
+        per: h.per,
+        wDir: h.wDir,
+        wind: h.wind,
+        dir: h.dir,
+        gust: h.gust,
+        press: h.press,
+      },
+    });
+  } catch {
+    /* research data, not a request path */
   }
 }
