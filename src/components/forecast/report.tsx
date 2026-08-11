@@ -71,7 +71,7 @@ export function Report({ initialReport, serverNow }: ReportProps) {
         historySettled={historySettled}
       />
       {ready ? (
-        <TodayCards cards={buildTodayCards(report.days, now, report.timezone)} />
+        <TodayCards cards={buildTodayCards(report.days, report.hours, now, report.timezone)} />
       ) : (
         <TodayCardsSkeleton />
       )}

@@ -187,6 +187,9 @@ export const COPY = {
   },
 
   today: {
+    hourlyHeading: "Hour by hour",
+    hourlyAria: (from: string, to: string) =>
+      `Blue Grotto closure odds by hour, ${from} to ${to}`,
     morning: { title: "This morning", sub: "09:00 – 13:00" },
     afternoon: { title: "This afternoon", sub: "13:00 – 18:00" },
     /** Used once today's afternoon has ended and the cards roll to tomorrow. */
