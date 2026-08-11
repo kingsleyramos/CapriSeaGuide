@@ -51,8 +51,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const live = await fetchGrottoStatus({ fresh: true });
-    await recordReading({ t: now.getTime(), status: live.status });
+    const live = await fetchGrottoStatus();
+    await recordReading({ t: now.getTime(), status: live.status, conflict: live.conflict });
     return NextResponse.json({ recorded: live.status, at: now.getTime() });
   } catch (error) {
     return NextResponse.json(
