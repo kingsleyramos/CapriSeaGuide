@@ -46,7 +46,7 @@ export function Report({ initialReport, serverNow }: ReportProps) {
   // shifting the layout.
   const ready = usable(report);
   const nowView = ready
-    ? buildNowView(report.hours, report.fetchedAt, now, report.timezone)
+    ? buildNowView(report.hours, report.fetchedAt, now, report.timezone, live?.status)
     : null;
 
   // The chip also waits for the forecast: its unknown-verdict line quotes our

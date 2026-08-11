@@ -29,14 +29,13 @@ export const angleDelta = (a: number, b: number) =>
  * from `dir` hits a shore facing `faceBearing`. Peaks (1.0) when the incoming
  * direction matches the exposed bearing, floors when it is off-axis.
  *
- * `DIRECTION.legacyInverted` restores the delivered design's inverted behavior.
+ * The `Math.max(0, ...)` flattens the whole rear hemisphere onto the floor, so
+ * a swell from directly behind reads the same as one from abeam.
  */
 export const cosFace = (dir: number, faceBearing: number) => {
   const d = angleDelta(dir, faceBearing);
-  const angle = DIRECTION.legacyInverted ? 180 - d : d;
   return (
-    DIRECTION.floor +
-    (1 - DIRECTION.floor) * Math.max(0, Math.cos((angle * Math.PI) / 180))
+    DIRECTION.floor + (1 - DIRECTION.floor) * Math.max(0, Math.cos((d * Math.PI) / 180))
   );
 };
 
