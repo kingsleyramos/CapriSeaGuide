@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { COPY } from "@/config/copy";
 import { GROTTO_HOURS, HISTORY_DAYS, LOCATION, SLOT_HOURS } from "@/config/tuning";
 import { buildHours } from "@/lib/forecast/aggregate";
-import { deriveSegments, minToHHMM, modeledSegments } from "@/lib/forecast/grotto-actual";
+import {
+  deriveSegments,
+  minToHHMM,
+  modeledSegments,
+  type ReportedStatus,
+} from "@/lib/forecast/grotto-actual";
 import { capriParts, closeHourForMonth } from "@/lib/forecast/grotto-hours";
 import type {
   BarSegment,
@@ -108,22 +113,28 @@ export async function GET(req: Request) {
     // ---- The live day: reported so far (solid), then forecast to close (pale).
     let reportedMin: number | null = null;
     let reportedBar: BarSegment[] = [];
+    // The call still standing at the last check, which the forecast decays away from.
+    let lastCall: { status: ReportedStatus; min: number } | undefined;
     if (liveDate === todayDate && !afterClose) {
       const todayReadings = readings
         .map((r) => ({ ...capriParts(r.t, tz), status: r.status }))
         .filter((r) => r.date === todayDate && r.status !== "unknown");
       if (todayReadings.length) {
         reportedMin = Math.max(...todayReadings.map((r) => r.minute));
-        reportedBar = deriveSegments(readings, todayDate, tz, reportedMin).map((s, i) => ({
+        const reported = deriveSegments(readings, todayDate, tz, reportedMin);
+        reportedBar = reported.map((s, i) => ({
           startMin: s.startMin,
           endMin: s.endMin,
           tone: s.status,
           label: i > 0 ? s.start : null,
         }));
+        const standing = reported[reported.length - 1];
+        if (standing) lastCall = { status: standing.status, min: reportedMin };
       }
     }
     const forecastBar: BarSegment[] = modeledSegments(oddsOf(liveDate), liveDate, {
       fromMin: reportedMin ?? openMin,
+      last: lastCall,
     }).map((s) => ({ startMin: s.startMin, endMin: s.endMin, tone: s.tone, label: null }));
     const liveBar = [...reportedBar, ...forecastBar];
     const today: TodayPayload | null = liveBar.length

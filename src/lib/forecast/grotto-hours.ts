@@ -25,11 +25,12 @@ export function capriParts(at: Date | number, timezone: string = LOCATION.timezo
   };
 }
 
+export const isWinterMonth = (month: number): boolean =>
+  !(GROTTO_HOURS.summerMonths as readonly number[]).includes(month);
+
 /** Seasonal closing hour (24h decimal, e.g. 17.5) for a 0-indexed month. */
 export const closeHourForMonth = (month: number): number =>
-  (GROTTO_HOURS.summerMonths as readonly number[]).includes(month)
-    ? GROTTO_HOURS.summerClose
-    : GROTTO_HOURS.winterClose;
+  isWinterMonth(month) ? GROTTO_HOURS.winterClose : GROTTO_HOURS.summerClose;
 
 /** Open at the opening minute, shut at the closing one. */
 export function isWithinGrottoHours(

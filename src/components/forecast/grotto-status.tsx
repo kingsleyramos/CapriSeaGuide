@@ -264,11 +264,13 @@ function HistoryDayRow({ view }: { view: HistoryDayView }) {
  */
 export function GrottoStatus({
   view,
+  seasonNote,
   timeline,
   liveSettled,
   historySettled,
 }: {
   view: GrottoView;
+  seasonNote: string | null;
   timeline: GrottoTimelineView | null;
   liveSettled: boolean;
   historySettled: boolean;
@@ -304,6 +306,10 @@ export function GrottoStatus({
           {c.viewReport}
         </a>
       </div>
+
+      {seasonNote && (
+        <p className="-mt-2 px-5 pb-4 text-[13px] font-medium text-ink-soft">{seasonNote}</p>
+      )}
 
       {/* Today's timeline: reported so far + forecast. Legend and axis are
           static, so only the bar itself waits. */}

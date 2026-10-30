@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveSegments, modeledSegments } from "./grotto-actual";
+import { deriveSegments, modeledSegments, persistedGrottoProb } from "./grotto-actual";
 import type { GrottoReading } from "./types";
 
 const TZ = "Europe/Rome";
@@ -91,5 +91,46 @@ describe("modeledSegments", () => {
 
   it("returns nothing when there are no hours in the opening window", () => {
     expect(modeledSegments([], "2026-08-04")).toEqual([]);
+  });
+});
+
+describe("persistence of the last recorded call", () => {
+  const flat = Array.from({ length: 24 }, (_, hour) => ({ hour, grotto: 0.1 }));
+
+  it("carries a midday closure across the afternoon the model calls calm", () => {
+    // Shut at 12:00 with the model at 0.1: without persistence the whole
+    // afternoon reads "expected open" while the cave is in fact still closed.
+    const segs = modeledSegments(flat, "2026-08-04", {
+      fromMin: 720,
+      last: { status: "closed", min: 720 },
+    });
+    expect(segs.map((s) => s.tone)).toEqual(["possibleClosure"]);
+    expect(segs[0].end).toBe("17:30");
+  });
+
+  it("lets an open call fade to the model within the hour", () => {
+    const rough = flat.map((h) => ({ ...h, grotto: h.hour >= 14 ? 0.8 : 0.1 }));
+    const segs = modeledSegments(rough, "2026-08-04", {
+      fromMin: 720,
+      last: { status: "open", min: 720 },
+    });
+    expect(segs.map((s) => s.tone)).toEqual(["expectedOpen", "possibleClosure"]);
+    expect(segs[1].start).toBe("14:00");
+  });
+
+  it("decays a closure toward the model, never below it", () => {
+    const at = (lag: number) => persistedGrottoProb(0.1, "closed", lag);
+    expect(at(0)).toBeCloseTo(1, 6);
+    expect(at(1)).toBeGreaterThan(at(3));
+    expect(at(3)).toBeGreaterThan(at(6));
+    expect(at(48)).toBeGreaterThan(0.1);
+    expect(at(48)).toBeCloseTo(0.1, 3);
+    // A reading from the future must not weigh more than one from now.
+    expect(persistedGrottoProb(0.1, "closed", -5)).toBeCloseTo(1, 6);
+  });
+
+  it("never invents risk the model does not see once an open call has aged", () => {
+    expect(persistedGrottoProb(0.1, "open", 4)).toBeCloseTo(0.1, 3);
+    expect(persistedGrottoProb(0.1, "open", 0)).toBeCloseTo(0, 6);
   });
 });

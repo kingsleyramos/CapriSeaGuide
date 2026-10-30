@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GROTTO, GROTTO_FORECAST } from "@/config/tuning";
 import type { RawHour } from "./types";
 import {
   angleDelta,
@@ -112,25 +113,144 @@ describe("cosFace direction physics (fixed, not inverted)", () => {
 
 describe("grottoProb honours the fix", () => {
   it("NW swell closes the grotto far more than an equal SE swell", () => {
-    const nw = grottoProb({ wave: 1.2, swell: 1, per: 9, wDir: 322, wind: 12, dir: 322, gust: 18 });
-    const se = grottoProb({ wave: 1.2, swell: 1, per: 9, wDir: 142, wind: 12, dir: 142, gust: 18 });
+    // north: 0 on both, so this stays a test of the swell's direction alone.
+    const nw = grottoProb({ wave: 1.2, swell: 1, per: 9, wDir: 322, wind: 12, dir: 322, gust: 18, north: 0, springTide: -1 });
+    const se = grottoProb({ wave: 1.2, swell: 1, per: 9, wDir: 142, wind: 12, dir: 142, gust: 18, north: 0, springTide: -1 });
     expect(nw).toBeGreaterThan(0.8);
     // The head-on NW swell is near-certain; the off-axis SE swell is much lower.
     expect(nw - se).toBeGreaterThan(0.4);
   });
 
   it("stays inside its configured floor/ceil", () => {
-    const calm = grottoProb({ wave: 0.05, swell: 0, per: 4, wDir: 180, wind: 2, dir: 180, gust: 3 });
-    const storm = grottoProb({ wave: 4, swell: 3, per: 12, wDir: 322, wind: 45, dir: 322, gust: 60 });
-    expect(calm).toBeGreaterThanOrEqual(0.04);
-    expect(storm).toBeLessThanOrEqual(0.985);
+    const calm = grottoProb({ wave: 0.05, swell: 0, per: 4, wDir: 180, wind: 2, dir: 180, gust: 3, north: -2, springTide: -1 });
+    const storm = grottoProb({ wave: 4, swell: 3, per: 12, wDir: 322, wind: 45, dir: 322, gust: 60, north: 35, springTide: -1 });
+    expect(calm).toBe(GROTTO.floor);
+    expect(storm).toBe(GROTTO.ceil);
+  });
+});
+
+describe("northerly wind closes the grotto on its own", () => {
+  // 14 Sep 2026: leftover SE swell, light NNE wind, shut at every reading.
+  const flat = { wave: 0.23, swell: 0.19, per: 3.6, wDir: 131, wind: 4.6, dir: 20, gust: 6.7, springTide: -1 };
+
+  it("warns in a sea the swell term calls flat", () => {
+    expect(grottoProb({ ...flat, north: -4 })).toBe(GROTTO.floor);
+    expect(grottoProb({ ...flat, north: 4.5 })).toBeGreaterThan(0.8);
+  });
+
+  it("is silent in calm air and in a southerly, however strong", () => {
+    for (const north of [0, -3, -12]) expect(grottoProb({ ...flat, north })).toBe(GROTTO.floor);
+  });
+
+  it("rises with the wind and never lowers what the swell already says", () => {
+    const at = (north: number) => grottoProb({ ...flat, north });
+    expect(at(2)).toBeLessThan(at(3));
+    expect(at(3)).toBeLessThan(at(5));
+    const swell = { wave: 1.2, swell: 1, per: 9, wDir: 322, wind: 6, dir: 180, gust: 9, springTide: -1 };
+    expect(grottoProb({ ...swell, north: -6 })).toBeGreaterThan(0.8);
+  });
+
+  it("answers to the wind that has been blowing, not the gust of the moment", () => {
+    const day = (dirs: number[]) =>
+      buildHours(dirs.map((dir, h) => baseHour({ t: `2026-08-03T${String(h).padStart(2, "0")}:00`, wind: 6, dir })));
+    const { windowH, mid } = GROTTO.northWind;
+    // Six hours from due north: the trailing mean is the wind itself.
+    const steady = day(Array(12).fill(0));
+    expect(steady[11].north).toBeCloseTo(6, 6);
+    expect(steady[0].north).toBeCloseTo(6, 6); // a feed's first hour averages what there is
+    // One northerly hour after a southerly morning barely registers...
+    const veer = day([...Array(11).fill(180), 0]);
+    expect(veer[11].north).toBeLessThan(mid);
+    expect(veer[10].north).toBeCloseTo(-6, 6);
+    // ...and the term has faded a full window after the wind backs south.
+    const back = day([...Array(6).fill(0), ...Array(windowH).fill(180)]);
+    expect(back[5].north).toBeCloseTo(6, 6);
+    expect(back[6 + windowH - 1].north).toBeCloseTo(-6, 6);
+    expect(back[6 + windowH - 1].probs.grotto).toBe(GROTTO.floor);
+    expect(steady[11].probs.grotto).toBeGreaterThan(0.8);
+  });
+
+  it("is a bearing, not a fixed compass point", () => {
+    // A westerly has no northerly component at all; NW has ~0.7 of its speed.
+    const [w] = buildHours([baseHour({ wind: 10, dir: 270 })]);
+    const [nw] = buildHours([baseHour({ wind: 10, dir: 315 })]);
+    expect(w.north).toBeCloseTo(0, 6);
+    expect(nw.north).toBeCloseTo(10 * Math.SQRT1_2, 6);
+  });
+});
+
+describe("swell reaches the cave across its open arc", () => {
+  const southerly = { wind: 10, dir: 135, gust: 14, north: -7, springTide: -1 };
+
+  it("shuts for a south-westerly swell the head-on factor waves through", () => {
+    // 11 Sep 2026: shut all day.
+    expect(grottoProb({ ...southerly, wave: 0.94, swell: 0.78, per: 5.4, wDir: 225 })).toBeGreaterThan(0.8);
+  });
+
+  it("is not fooled by wind chop of the same height", () => {
+    // 25 Aug 2026: open all day.
+    expect(grottoProb({ ...southerly, wave: 0.7, swell: 0.15, per: 2.6, wDir: 239 })).toBe(GROTTO.floor);
+  });
+
+  it("stops where the island gets in the way, without a cliff edge", () => {
+    const from = (wDir: number) => grottoProb({ ...southerly, wave: 0.84, swell: 0.71, per: 5.5, wDir });
+    const { fullWithin, noneBeyond } = GROTTO.swell.reach;
+    const off = (deg: number) => from(GROTTO.faceBearing - deg);
+    expect(off(fullWithin)).toBeGreaterThan(0.8);
+    expect(off((fullWithin + noneBeyond) / 2)).toBeLessThan(off(fullWithin));
+    expect(off((fullWithin + noneBeyond) / 2)).toBeGreaterThan(off(noneBeyond));
+    expect(off(noneBeyond)).toBe(GROTTO.floor);
+    expect(from(142)).toBe(GROTTO.floor); // SE: fully behind the island
+  });
+
+  it("leaves a head-on swell exactly as it was", () => {
+    // Swell is never taller than the sea it is part of, so on the cave's own
+    // bearing the straight-in term always wins.
+    const nw = { ...southerly, wave: 0.5, per: 5, wDir: GROTTO.faceBearing };
+    expect(grottoProb({ ...nw, swell: 0.5 })).toBe(grottoProb({ ...nw, swell: 0 }));
+  });
+});
+
+describe("spring tides lean the odds", () => {
+  const calm = { wave: 0.15, swell: 0.12, per: 3, wDir: 240, wind: 4, dir: 200, gust: 6, north: -3 };
+
+  it("raises a calm day at the peak, but stops short of the warning line", () => {
+    const peak = grottoProb({ ...calm, springTide: 1 });
+    expect(peak).toBeGreaterThan(GROTTO.floor);
+    expect(peak).toBeLessThan(GROTTO_FORECAST.possibleClosureAt);
+    expect(grottoProb({ ...calm, springTide: 0 })).toBe(GROTTO.floor);
+    expect(grottoProb({ ...calm, springTide: -1 })).toBe(GROTTO.floor);
+  });
+
+  it("tips a marginal day over the line", () => {
+    const marginal = { ...calm, north: 2 };
+    expect(grottoProb({ ...marginal, springTide: -1 })).toBeLessThan(GROTTO_FORECAST.possibleClosureAt);
+    expect(grottoProb({ ...marginal, springTide: 1 })).toBeGreaterThan(GROTTO_FORECAST.possibleClosureAt);
+  });
+
+  it("is one value per date, peaking the day after a new or full moon", () => {
+    const on = (date: string) =>
+      buildHours(Array.from({ length: 24 }, (_, h) => baseHour({ t: `${date}T${String(h).padStart(2, "0")}:00` })));
+    const day = on("2026-08-13"); // new moon late on the 12th
+    expect(new Set(day.map((h) => h.springTide)).size).toBe(1);
+    expect(day[0].springTide).toBeGreaterThan(GROTTO.springTide.mid);
+    expect(on("2026-08-21")[0].springTide).toBeLessThan(-0.9); // first quarter
+  });
+
+  it("says so when it is the reason", () => {
+    const hours = Array.from({ length: 24 }, (_, h) =>
+      baseHour({ t: `2026-08-13T${String(h).padStart(2, "0")}:00`, wave: 0.15, swell: 0.12, per: 3, wDir: 240, wind: 4, dir: 200 }),
+    );
+    const row = buildDayRow(buildDays(buildHours(hours))[0], new Date("2026-08-13T10:00:00Z"), "Europe/Rome")!;
+    expect(row.line).toMatch(/spring tides/);
+    expect(row.why).toMatch(/new or full moon/);
   });
 });
 
 /* ----------------------------------------------------------- activity model */
 
 describe("computeProbs across activities", () => {
-  const rough = { wave: 1.5, swell: 1.2, per: 8, wDir: 322, wind: 22, dir: 322, gust: 30 };
+  const rough = { wave: 1.5, swell: 1.2, per: 8, wDir: 322, wind: 22, dir: 322, gust: 30, north: 17, springTide: -1 };
   it("hydrofoils cancel before the big car ferry", () => {
     const p = computeProbs(rough);
     expect(p.fSor).toBeGreaterThan(p.fBig);
@@ -274,6 +394,42 @@ describe("view models", () => {
     expect(rough.why).toMatch(/closes the Blue Grotto/);
     expect(buildDayRow(days[0], noonCapri, "Europe/Rome")!.label).toMatch(/Today/);
     expect(rough.label).toMatch(/Tomorrow/);
+  });
+
+  it("names the wind, not the swell, when a northerly shuts a flat sea", () => {
+    // Leftover swell from the SE (away from the cave) under a steady northerly:
+    // the wording must not credit the swell direction with keeping it open.
+    const windy = Array.from({ length: 24 }, (_, h) =>
+      baseHour({ t: `2026-08-03T${String(h).padStart(2, "0")}:00`, wave: 0.2, swell: 0.2, per: 4, wDir: 131, wind: 6, dir: 10 }),
+    );
+    const row = buildDayRow(buildDays(buildHours(windy))[0], noonCapri, "Europe/Rome")!;
+    expect(row.why).toMatch(/Wind from the north/);
+    expect(row.line).toMatch(/northerly wind/i);
+    // Same sea under a southerly: back to the swell-direction line, no warning.
+    const mild = windy.map((h) => ({ ...h, dir: 190 }));
+    const calm = buildDayRow(buildDays(buildHours(mild))[0], noonCapri, "Europe/Rome")!;
+    expect(calm.why).toMatch(/helps it stay open/);
+    expect(calm.line).toMatch(/No weather closures expected/);
+  });
+
+  it("does not blame a trace of northerly swell when the wind is the reason", () => {
+    const hours = Array.from({ length: 24 }, (_, h) =>
+      baseHour({ t: `2026-08-03T${String(h).padStart(2, "0")}:00`, wave: 0.17, swell: 0.17, per: 3, wDir: 15, wind: 6, dir: 10 }),
+    );
+    const row = buildDayRow(buildDays(buildHours(hours))[0], noonCapri, "Europe/Rome")!;
+    expect(row.line).toMatch(/northerly wind/i);
+    expect(row.why).toMatch(/Wind from the north/);
+  });
+
+  it("does not call a south-westerly swell sheltered", () => {
+    // 11 Sep 2026.
+    const sw = Array.from({ length: 24 }, (_, h) =>
+      baseHour({ t: `2026-08-03T${String(h).padStart(2, "0")}:00`, wave: 0.94, swell: 0.78, per: 5.4, wDir: 225, wind: 6, dir: 135 }),
+    );
+    const row = buildDayRow(buildDays(buildHours(sw))[0], noonCapri, "Europe/Rome")!;
+    expect(row.why).toMatch(/not head-on/);
+    expect(row.why).not.toMatch(/helps it stay open/);
+    expect(row.line).toMatch(/almost certainly shut/);
   });
 
   it("day labels track the client clock, not the report's lead", () => {

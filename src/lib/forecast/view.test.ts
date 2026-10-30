@@ -30,6 +30,8 @@ const hour = (date: string, h: number): CompactHour => ({
   rain: 0,
   dp: 0.1,
   spread: 0.1,
+  north: -4,
+  springTide: -1,
   probs,
 });
 

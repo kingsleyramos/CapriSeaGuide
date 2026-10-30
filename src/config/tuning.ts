@@ -67,11 +67,24 @@ export const DIRECTION = {
 export const GROTTO = {
   faceBearing: 322,
   period: { clampMin: 3, clampMax: 14, ref: 6, exp: 0.35 },
-  swell: { effMid: 0.34, effK: 0.062 },
+  swell: {
+    effMid: 0.34,
+    effK: 0.062,
+    /** Share of the swell partition reaching the mouth off-axis, by degrees off
+     *  `faceBearing`. Not total wave height: wind chop does not get round. */
+    reach: { share: 0.8, fullWithin: 110, noneBeyond: 130 },
+  },
   wind: { mid: 17, k: 3.2, weight: 0.85 },
+  /** Trailing wind from `bearing`, which shuts the cave in a sea too short-fetched
+   *  for the wave models to see. */
+  northWind: { bearing: 0, windowH: 6, mid: 2.5, k: 0.5, weight: 0.9 },
   /** Extra long-period swell surge term. */
   longPeriodSurge: { periodMin: 8, faceMin: 0.7, waveMid: 0.3, waveK: 0.09, weight: 0.5 },
-  floor: 0.04,
+  /** Lean around new and full moon. `weight` keeps an otherwise calm day just under
+   *  the warning line: those days shut less than half the time. */
+  springTide: { lagH: 24, mid: 0.85, k: 0.1, weight: 0.35 },
+  /** How often the cave is shut anyway when nothing above fires. */
+  floor: 0.15,
   ceil: 0.985,
 } as const;
 
@@ -96,12 +109,17 @@ export const HISTORY_DAYS = 7;
  * Bands for the grotto's forecast, i.e. the pale part of the live day's bar:
  * today's hours after the last recorded check, and all of tomorrow once today
  * has closed. For each hour, a modelled closure chance at or above
- * `possibleClosureAt` shows as "possible closure"; below it, "expected open".
- * We reuse the PILL_BANDS "low" cutoff (0.3) so this pale bar and the activity
- * pill can never tell different stories. Past days are never forecast this way:
- * with no recorded call they simply read "No data".
+ * `possibleClosureAt` shows as "likely closed"; below it, "expected open".
+ * We reuse the PILL_BANDS "low" cutoff (0.3), so with no reading to go on the
+ * pale bar and the activity pill say the same thing; after a recorded call the
+ * bar follows the recorder instead (GROTTO_PERSISTENCE). Past days are never
+ * forecast this way: with no recorded call they simply read "No data".
  */
 export const GROTTO_FORECAST = { possibleClosureAt: 0.3 } as const;
+
+/** How long the last recorded call outweighs the model on the live day's bar, as
+ *  exp(-lagHours / tau). A closure holds for hours; an open reading says little. */
+export const GROTTO_PERSISTENCE = { tauClosedH: 5.5, tauOpenH: 0.6 } as const;
 
 /** Gust term added to every standard activity's closure probability. */
 export const GUST = { midOffset: 8, kOffset: 1, weight: 0.6 } as const;

@@ -13,7 +13,7 @@
  * closing time (see GROTTO_HOURS).
  */
 
-import { GROTTO_FORECAST, GROTTO_HOURS, LOCATION } from "@/config/tuning";
+import { GROTTO_FORECAST, GROTTO_HOURS, GROTTO_PERSISTENCE, LOCATION } from "@/config/tuning";
 import { capriParts, closeHourForMonth } from "./grotto-hours";
 import type { GrottoReading } from "./types";
 
@@ -95,17 +95,31 @@ export function deriveSegments(
 const modeledTone = (grotto: number): ModeledTone =>
   grotto >= GROTTO_FORECAST.possibleClosureAt ? "possibleClosure" : "expectedOpen";
 
+/** Relax the last recorded call toward the modelled odds as it ages. */
+export function persistedGrottoProb(
+  modeled: number,
+  lastStatus: ReportedStatus,
+  lagHours: number,
+): number {
+  const tau =
+    lastStatus === "closed" ? GROTTO_PERSISTENCE.tauClosedH : GROTTO_PERSISTENCE.tauOpenH;
+  const weight = Math.exp(-Math.max(0, lagHours) / tau);
+  return weight * (lastStatus === "closed" ? 1 : 0) + (1 - weight) * modeled;
+}
+
 /**
  * Build the pale forecast bars for the live day from the model's hourly closure
  * odds. Used for today's hours after the last recorded check, and for all of
  * tomorrow once today has closed. Each hour becomes "expected open" or "possible
  * closure" using the GROTTO_FORECAST cutoff. `fromMin` lets the forecast begin
  * partway through the day (at the last-check time); it defaults to opening time.
+ * `last` is the call in force at `fromMin`, which the odds decay away from; pass
+ * it only for today, never for tomorrow's bar.
  */
 export function modeledSegments(
   dayHours: { hour: number; grotto: number }[],
   date: string,
-  opts: { fromMin?: number } = {},
+  opts: { fromMin?: number; last?: { status: ReportedStatus; min: number } } = {},
 ): ModeledSegment[] {
   const month = Number(date.slice(5, 7)) - 1;
   const openHour = GROTTO_HOURS.open;
@@ -120,9 +134,14 @@ export function modeledSegments(
     .sort((a, b) => a.hour - b.hour);
   if (!inHours.length) return [];
 
+  const oddsAt = (h: { hour: number; grotto: number }) =>
+    opts.last
+      ? persistedGrottoProb(h.grotto, opts.last.status, (h.hour * 60 + 30 - opts.last.min) / 60)
+      : h.grotto;
+
   const runs: { hour: number; tone: ModeledTone }[] = [];
   for (const h of inHours) {
-    const tone = modeledTone(h.grotto);
+    const tone = modeledTone(oddsAt(h));
     const last = runs[runs.length - 1];
     if (last && last.tone === tone) continue;
     runs.push({ hour: h.hour, tone });

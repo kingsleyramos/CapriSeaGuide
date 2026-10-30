@@ -10,7 +10,7 @@
 
 import { COPY, type GrottoDisplayTone, type GrottoStatus } from "@/config/copy";
 import { GROTTO_HOURS, LOCATION } from "@/config/tuning";
-import { capriParts, isWithinGrottoHours } from "./grotto-hours";
+import { capriParts, isWinterMonth, isWithinGrottoHours } from "./grotto-hours";
 import { pct } from "./math";
 
 export interface GrottoView {
@@ -65,6 +65,10 @@ export function buildGrottoView({
     line: c.fallback(pct(forecastGrottoProb)),
   };
 }
+
+/** A standing caution for the months the model has no recorded days from. */
+export const grottoSeasonNote = (now: Date, timezone: string = LOCATION.timezone): string | null =>
+  isWinterMonth(capriParts(now, timezone).month) ? COPY.grottoBar.winterNote : null;
 
 /* ------------------------------------- grotto timeline (today bar + history) */
 

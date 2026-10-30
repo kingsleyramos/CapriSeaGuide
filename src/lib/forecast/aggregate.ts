@@ -1,5 +1,6 @@
 import { ACTIVITIES, type ActivityKey } from "@/config/activities";
-import { CONFIDENCE, FORECAST_DAYS, SLOT_HOURS, SPREAD } from "@/config/tuning";
+import { CONFIDENCE, FORECAST_DAYS, GROTTO, SLOT_HOURS, SPREAD } from "@/config/tuning";
+import { springIndex } from "@/lib/moon";
 import { clamp, mean } from "./math";
 import { computeProbs, headProb } from "./model";
 import type {
@@ -26,17 +27,38 @@ function blendSpread(h: RawHour): number {
   return Math.max(SPREAD.floor, parts);
 }
 
+/** Each hour's wind from GROTTO.northWind.bearing, averaged over the trailing
+ *  window. The first hours of a feed average over what there is. */
+function northWind(raw: RawHour[]): number[] {
+  const { bearing, windowH } = GROTTO.northWind;
+  const along = raw.map((h) => h.wind * Math.cos(((h.dir - bearing) * Math.PI) / 180));
+  return along.map((_, i) => mean(along.slice(Math.max(0, i - windowH + 1), i + 1)));
+}
+
+/** One value per date, read mid-morning: the boatmen make the call once, and
+ *  closures do not follow the water hour by hour. */
+const springTideOn = (date: string) =>
+  springIndex(Date.parse(`${date}T10:00:00Z`) - GROTTO.springTide.lagH * 3_600_000);
+
 /** Turn normalized hours into engine hours: add date/hour, pressure tendency,
- *  blended spread, and per-activity probabilities. */
+ *  blended spread, trailing northerly wind, spring tide, and per-activity
+ *  probabilities. */
 export function buildHours(raw: RawHour[]): HourPoint[] {
-  const hours: HourPoint[] = raw.map((h) => ({
-    ...h,
-    date: h.t.slice(0, 10),
-    hour: Number(h.t.slice(11, 13)),
-    dp: 0,
-    spread: blendSpread(h),
-    probs: computeProbs(h),
-  }));
+  const north = northWind(raw);
+  const hours: HourPoint[] = raw.map((h, i) => {
+    const date = h.t.slice(0, 10);
+    const springTide = springTideOn(date);
+    return {
+      ...h,
+      date,
+      hour: Number(h.t.slice(11, 13)),
+      dp: 0,
+      spread: blendSpread(h),
+      north: north[i],
+      springTide,
+      probs: computeProbs({ ...h, north: north[i], springTide }),
+    };
+  });
   hours.forEach((h, i) => {
     const later = hours[Math.min(hours.length - 1, i + 6)];
     h.dp = later.press - h.press;
@@ -84,6 +106,8 @@ export function buildSlot(hours: SlotSourceHour[], lead: number): Slot | null {
     press: mean(hours.map((h) => h.press)),
     dp,
     spread,
+    north: mean(hours.map((h) => h.north)),
+    springTide: mean(hours.map((h) => h.springTide)),
     rain: mean(hours.map((h) => h.rain)),
     p,
     head,
@@ -127,6 +151,8 @@ const toCompact = (h: HourPoint): CompactHour => ({
   rain: h.rain,
   dp: h.dp,
   spread: h.spread,
+  north: h.north,
+  springTide: h.springTide,
   probs: h.probs,
 });
 

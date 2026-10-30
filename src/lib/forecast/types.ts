@@ -31,6 +31,11 @@ export interface HourPoint extends RawHour {
   hour: number; // 0–23 local
   dp: number; // pressure change to +6h (hPa)
   spread: number; // blended source disagreement (kn-equivalent)
+  /** Wind from the north over the last few hours, kn; negative in a southerly
+   *  (see GROTTO.northWind). */
+  north: number;
+  /** This day's springIndex, +1 at the peak of the spring tides. */
+  springTide: number;
   probs: Record<ActivityKey, number>;
 }
 
@@ -46,6 +51,8 @@ export interface Slot {
   press: number;
   dp: number;
   spread: number;
+  north: number;
+  springTide: number;
   rain: number;
   /** Chance each activity is off, 0–1. */
   p: Record<ActivityKey, number>;
@@ -79,6 +86,8 @@ export interface CompactHour {
   rain: number;
   dp: number;
   spread: number;
+  north: number;
+  springTide: number;
   probs: Record<ActivityKey, number>;
 }
 
@@ -96,6 +105,8 @@ export type SlotSourceHour = Pick<
   | "press"
   | "dp"
   | "spread"
+  | "north"
+  | "springTide"
   | "rain"
   | "probs"
 >;

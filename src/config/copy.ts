@@ -126,6 +126,8 @@ export const COPY = {
       `Live status unavailable. Our forecast puts it around ${odds} likely closed right now.`,
     /** Shown when we cross-checked more than one source and they disagree. */
     disagreement: "Live sources disagree, so treat this as provisional.",
+    winterNote:
+      "The cave often stays shut in winter, opening only on mild mornings. This forecast hasn't been tested on winter days yet, so check with the boatmen before you go.",
   },
 
   /** The Blue Grotto timeline that lives under the live-status row: today's bar
@@ -149,7 +151,7 @@ export const COPY = {
       open: "Open",
       closed: "Closed",
       expectedOpen: "Expected open",
-      possibleClosure: "Possible closure",
+      possibleClosure: "Likely closed",
       none: "No data",
     },
     /** Expanded-grid columns. `mobile: true` also shows on phones; the rest are
@@ -230,23 +232,36 @@ export const COPY = {
     grotto,
     tour,
     northerly,
+    northWind,
+    springTide,
   }: {
     grotto: number;
     tour: number;
+    /** Swell arriving from a northerly quarter. */
     northerly: boolean;
+    /** Wind from the north strong enough to shut the cave by itself. */
+    northWind: boolean;
+    /** Within a few days of a new or full moon. */
+    springTide: boolean;
   }): string {
     const t = SUMMARY_THRESHOLDS;
     if (grotto > t.grottoShut) {
-      return northerly
-        ? "Swell is hitting the cave head-on. The Blue Grotto is almost certainly shut."
-        : "Too much water at the cave entrance. The Blue Grotto is almost certainly shut, and small boats will be bouncing.";
+      if (northerly)
+        return "Swell is hitting the cave head-on. The Blue Grotto is almost certainly shut.";
+      if (northWind)
+        return "A northerly wind is driving chop straight onto the cave mouth. The Blue Grotto is almost certainly shut.";
+      return "Too much water at the cave entrance. The Blue Grotto is almost certainly shut, and small boats will be bouncing.";
     }
     if (grotto > t.grottoRefuse)
-      return "Rough at the Blue Grotto. The boatmen often refuse entry in these conditions.";
+      return northWind
+        ? "Wind from the north is pushing chop onto the cave mouth. The boatmen often refuse entry in these conditions."
+        : "Rough at the Blue Grotto. The boatmen often refuse entry in these conditions.";
     if (grotto > t.grottoBorderline)
-      return "Borderline at the Blue Grotto. Likely open, but it's a judgment call at the cave.";
+      return "Borderline at the Blue Grotto. It could go either way, and the boatmen decide at the cave.";
     if (tour > t.tourRough)
       return "The Blue Grotto looks fine, but the wind makes boat trips rough.";
+    if (springTide)
+      return "Calm sea and light wind, but spring tides. The boatmen sometimes keep the Blue Grotto shut around a new or full moon.";
     return "Calm sea and light wind. No weather closures expected.";
   },
 
@@ -282,17 +297,30 @@ export const COPY = {
   dayWhyLine({
     closes,
     fromLabel,
+    northWind,
+    springTide,
+    reaches,
     spreadWarn,
     pressureWarn,
   }: {
     closes: boolean;
     fromLabel: string;
+    northWind: boolean;
+    springTide: boolean;
+    /** Swell is not head-on but arrives across open water (see GROTTO.swell.reach). */
+    reaches: boolean;
     spreadWarn: boolean;
     pressureWarn: boolean;
   }): string {
     const base = closes
       ? `Swell is arriving from the ${fromLabel}, the direction that closes the Blue Grotto.`
-      : "Swell direction is away from the grotto's northwest-facing mouth, which helps it stay open.";
+      : northWind
+        ? "Wind from the north blows straight down the Gulf of Naples onto the cave, which shuts the Blue Grotto even when the open sea looks calm."
+        : springTide
+          ? "Tides are at their largest around a new or full moon, and the cave's low mouth leaves little margin. The boatmen sometimes keep it shut even in a calm sea."
+          : reaches
+            ? `Swell from the ${fromLabel} is not head-on, but the cave looks out on open water that way, so enough of it still shuts the Blue Grotto.`
+            : "Swell is coming from behind the island, which shelters the grotto's northwest-facing mouth and helps it stay open.";
     // Kept qualitative on purpose: the confidence spread is a blended metric
     // (wind models + ensemble + waves), not a literal wind delta in knots.
     const spread = spreadWarn
@@ -319,7 +347,12 @@ export const COPY = {
       {
         lead: "The percentages.",
         body:
-          "Each one is the chance that activity is closed or cancelled in that time slot. Every activity has its own breaking point: the Blue Grotto's mouth is barely a metre high, so it closes once swell lifts the entrance water 30–40 cm. It faces northwest, so N/NW/WNW swell or wind hits it head-on while a southerly barely reaches it. Boat tours give up around 1.2 m or 18 kt. Hydrofoils cancel before car ferries; Amalfi Coast routes before both.",
+          "Each one is the chance that activity is closed or cancelled in that time slot. Every activity has its own breaking point: the Blue Grotto's mouth is barely a metre high, so it closes once swell lifts the entrance water 30–40 cm. It faces northwest, so N/NW/WNW swell hits it head-on. Swell from the west and southwest reaches it too, across open water; short wind chop from that side does not, and a sea from the south or east is blocked by the island altogether. A steady wind from the north shuts it on its own, in a sea that looks flat on every chart: it blows straight down the Gulf of Naples onto the cave, and over the recorded days a northerly of even a few knots nearly always kept the grotto closed. Its odds also lean up for the three days from each new or full moon, when the tides are largest: on otherwise calm days it shut about two days in five then, against one in seven the rest of the time. The grotto's figure never drops below 15%, because it was closed about one hour in seven even when nothing gave a reason, and it runs cautious: at 30–60% it was closed about four hours in five. Boat tours give up around 1.2 m or 18 kt. Hydrofoils cancel before car ferries; Amalfi Coast routes before both.",
+      },
+      {
+        lead: "Today's bar.",
+        body:
+          "Solid up to the last check is what the boatmen actually did, recorded every 10 minutes. The pale stretch after it is forecast — but it starts from the last call instead of ignoring it, because a closure carries: across the recorded days a grotto shut at noon was still shut 89% of the time an hour later, and 73% three hours later. An \"open\" reading fades within the hour and the sea model takes over. Past days are never forecast this way; with no recorded call they simply read \"No data\".",
       },
       {
         lead: "The verdict chips.",
@@ -359,7 +392,7 @@ export const COPY = {
         { label: "Windfinder", href: "https://www.windfinder.com/forecast/capri" },
         { label: "Grotto status (capri.net)", href: "https://www.capri.net/en/e/la-grotta-azzurra" },
         { label: "CoopCulture (official tickets)", href: "https://www.coopculture.it/en/poi/blue-grotto/" },
-        { label: "Open/closed light", href: "https://www.bluegrotto.tours/opening-times/" },
+        { label: "Boatmen's live status", href: "https://www.motoscafisticapri.com/" },
       ],
     },
     disclaimer:

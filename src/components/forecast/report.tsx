@@ -2,7 +2,7 @@
 
 import { COPY } from "@/config/copy";
 import { REFRESH } from "@/config/tuning";
-import { buildGrottoTimeline, buildGrottoView } from "@/lib/forecast/grotto-view";
+import { buildGrottoTimeline, buildGrottoView, grottoSeasonNote } from "@/lib/forecast/grotto-view";
 import type { ForecastReport } from "@/lib/forecast/types";
 import { buildNowView, buildTodayCards } from "@/lib/forecast/view";
 import { useForecast } from "@/hooks/use-forecast";
@@ -66,6 +66,7 @@ export function Report({ initialReport, serverNow }: ReportProps) {
       {nowView ? <NowCard now={nowView} /> : <NowCardSkeleton />}
       <GrottoStatus
         view={grottoView}
+        seasonNote={grottoSeasonNote(now, report?.timezone)}
         timeline={timeline}
         liveSettled={grottoSettled}
         historySettled={historySettled}
