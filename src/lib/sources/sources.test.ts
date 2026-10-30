@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseBlueGrotto, parseCapriNet } from "./grotto";
+import { parseBoatmen, parseCapriNet } from "./grotto";
 import { normalize } from "./open-meteo";
 
 /* ------------------------------------------------------------- open-meteo */
@@ -79,16 +79,20 @@ describe("parseCapriNet()", () => {
   it("returns unknown when neither phrase is present", () => {
     expect(parseCapriNet("<p>Welcome to the island of Capri.</p>")).toBe("unknown");
   });
-});
-
-describe("parseBlueGrotto()", () => {
-  it("ignores stray green/red imagery (no false positives)", () => {
+  it("returns unknown for the static winter text", () => {
     expect(
-      parseBlueGrotto('<img src="/theme/green-logo.svg"><img alt="red arrow icon">'),
+      parseCapriNet("<p>During the winter season from November through March, the Blue Grotto is generally closed</p>"),
     ).toBe("unknown");
   });
-  it("trusts a status-scoped light image", () => {
-    expect(parseBlueGrotto('<img src="/status-light-green.png" alt="open">')).toBe("open");
-    expect(parseBlueGrotto('<img src="/traffic-light-red.png">')).toBe("closed");
+});
+
+describe("parseBoatmen()", () => {
+  it("reads the feed's status", () => {
+    expect(parseBoatmen('{"status":"closed","last_modify":"1793267087"}')).toBe("closed");
+    expect(parseBoatmen('{"status":"open","last_modify":"1788589091"}')).toBe("open");
+  });
+  it("returns unknown for anything else", () => {
+    expect(parseBoatmen('{"status":"maintenance"}')).toBe("unknown");
+    expect(parseBoatmen("<html>Bad gateway</html>")).toBe("unknown");
   });
 });
