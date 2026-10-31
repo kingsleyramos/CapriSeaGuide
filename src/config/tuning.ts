@@ -58,7 +58,22 @@ export const DIRECTION = {
   floor: 0.22,
 } as const;
 
-/** Blue Grotto: bespoke physics (barely-a-metre-high mouth, faces NW). */
+/**
+ * Blue Grotto: bespoke physics.
+ *
+ * SOURCED. The mouth is about 2 m wide and roughly 1 m high at low tide, and a
+ * boat needs something like 90 cm to pass with passengers lying flat
+ * (Wikipedia, capri.com). It faces north-west, so N/NW/WNW swell arrives
+ * head-on while a southerly barely reaches it.
+ *
+ * NOT SOURCED: `effectiveWave.mid`, the most load-bearing number here. Public
+ * guides put closure around 30 cm of rise at the entrance, the same order as
+ * 0.34 -- corroboration, not derivation, and they cite nothing either. A 20%
+ * error swings the grotto's odds ~25 points on a typical day, enough to move
+ * the verdict chip on its own.
+ *
+ * TODO: score this against the recorded archive once it covers a winter.
+ */
 export const GROTTO = {
   faceBearing: 322,
   period: { clampMin: 3, clampMax: 14, ref: 6, exp: 0.35 },
@@ -153,7 +168,14 @@ export const NOW_TINT_BANDS: { max: number; tone: NowTone }[] = [
 export const CONFIDENCE = {
   base: 0.94,
   leadPenaltyPerDay: 0.075,
-  spread: { divisor: 14, max: 0.3 },
+  /*
+   * Sized from a week of live spread: median 3.44 kn-equivalent, p95 6.65, max
+   * 12.92. At 45 a median hour docks ~0.08 and the cap is left as a guard
+   * against genuine disarray, which puts High today and tomorrow, Medium
+   * mid-week, Low at the far end. Set it much lower and typical hours pin the
+   * cap, making High unreachable at any lead.
+   */
+  spread: { divisor: 45, max: 0.3 },
   pressure: { deadband: 2, divisor: 14, max: 0.22 },
   /** Penalty for sitting near the 50% knife-edge. */
   thresholdWeight: 0.42,

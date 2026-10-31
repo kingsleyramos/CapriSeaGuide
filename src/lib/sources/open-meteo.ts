@@ -145,7 +145,18 @@ export function normalize(
     const j = wIdx.get(t);
     const k = eIdx.get(t);
 
-    // Marine consensus
+    /*
+     * Marine consensus. The `:` fallbacks below feed the probability model
+     * directly whenever a column is missing, and none is derived:
+     *
+     *   swell = wave * 0.7   asserted, and shown to readers as "Swell"
+     *   per   = 5 s          a short, benign period, so it damps rather than
+     *                        amplifies the grotto term
+     *   gust  = wind * 1.45  a real rule of thumb, but uncited
+     *   press = 1015         near ISA's 1013.25, unexplained why it differs
+     *
+     * They keep a missing hour from throwing; read them as assumptions.
+     */
     const waves = acrossModels(mh, "wave_height", M, i);
     const wave = waves.length ? mean(waves) : 0;
     const swells = acrossModels(mh, "swell_wave_height", M, i);
