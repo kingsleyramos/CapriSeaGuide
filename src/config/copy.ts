@@ -54,6 +54,7 @@ export const COPY = {
     /** The share card's tagline. Deliberately understated: this is a plain
      *  summary of the sea reports, not a sales pitch. */
     tagline: "A simple summary of Capri's sea conditions",
+    skipToReport: "Skip to the forecast",
     ogImageAlt: "Capri Sea Guide: a simple summary of Capri's sea conditions",
     /** Footer credit + JSON-LD author. */
     credit: "Created by",

@@ -21,7 +21,7 @@ export function NowCard({ now }: { now: NowView }) {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
           <VerdictChip tone={now.verdict.tone}>{now.verdict.label}</VerdictChip>
-          <span className="text-sm font-semibold text-ink">{c.title}</span>
+          <h2 className="text-sm font-semibold text-ink">{c.title}</h2>
         </div>
         <div className="text-left sm:text-right">
           <div className="flex items-center gap-1.5 text-[13px] font-semibold tabular-nums text-ink sm:justify-end">

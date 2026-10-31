@@ -70,6 +70,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full">
         <StructuredData />
+        <a
+          href="#report"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface-raised focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink focus:outline-2 focus:outline-offset-2 focus:outline-link"
+        >
+          {M.skipToReport}
+        </a>
+        {/* Clipped, not removed: the design carries no visible title, but
+            crawlers and screen-reader heading navigation still need one. */}
+        <h1 className="sr-only">{M.name}</h1>
         {children}
         {/* ink-mute, not ink-faint: 11px text needs 4.5:1 contrast for WCAG AA
             (faint is 2.5:1 on white). */}

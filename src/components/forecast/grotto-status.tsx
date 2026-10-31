@@ -289,7 +289,7 @@ export function GrottoStatus({
             <Skeleton variant="pill">{c.statusLabel.unknown}</Skeleton>
           )}
           <div>
-            <div className="text-[15px] font-bold text-ink">{c.title}</div>
+            <h2 className="text-[15px] font-bold text-ink">{c.title}</h2>
             <div className="text-[13px] font-medium text-ink-soft">
               {liveSettled ? view.line : <Skeleton variant="copy">{c.loadingLine}</Skeleton>}
             </div>

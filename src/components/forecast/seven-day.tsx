@@ -117,7 +117,7 @@ export function SevenDay({
   return (
     <Card className="overflow-hidden">
       <div className="border-b border-line-soft px-5 pb-3 pt-4">
-        <div className="text-base font-bold">{s.title}</div>
+        <h2 className="text-base font-bold">{s.title}</h2>
         <div className="text-[13px] font-medium text-ink-soft">{s.subtitle}</div>
       </div>
       {days.map((day) => (
