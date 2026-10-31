@@ -8,9 +8,11 @@
 
 import { type ActivityKey, ACTIVITIES, TODAY_TOP_ACTIVITIES } from "@/config/activities";
 import { COPY, type ConfidenceTone } from "@/config/copy";
+import { isWithinGrottoHours } from "./grotto-hours";
 import {
   GROTTO,
   GROTTO_CLOSING_DIRS,
+  HOURLY_MAX_LEAD,
   LOCATION,
   NORTHERLY_SAILOR,
   REFRESH,
@@ -83,14 +85,16 @@ const northWind = (s: Slot) => s.north >= GROTTO.northWind.mid;
 /** Within the few days around a new or full moon that GROTTO.springTide leans on. */
 const springTide = (s: Slot) => s.springTide >= GROTTO.springTide.mid;
 
-/** The plain-language sea summary for a slot. */
-export const sailorLine = (s: Slot) =>
+/** The plain-language sea summary for a slot. `reportedClosed` applies only to
+ *  the live slot: a future slot has nothing observed to contradict it. */
+export const sailorLine = (s: Slot, reportedClosed = false) =>
   COPY.sailorLine({
     grotto: s.p.grotto,
     tour: s.p.tour,
     northerly: seaFrom(s, NORTHERLY_SAILOR),
     northWind: northWind(s),
     springTide: springTide(s),
+    reportedClosed,
   });
 
 export const verdictView = (head: number): VerdictView => {
@@ -157,6 +161,9 @@ export function buildNowView(
   fetchedAt: number,
   now: Date,
   timezone: string,
+  /** The boatmen's reported status, when there is one. Only the live card takes
+   *  it: an observation can contradict today's forecast, not next Friday's. */
+  reportedStatus?: "open" | "closed" | "unknown",
 ): NowView {
   const cur = pickCurrentHour(hours, now, timezone);
   const slot = buildSlot([cur], 0)!;
@@ -186,7 +193,7 @@ export function buildNowView(
     verdict: verdictView(slot.head),
     grottoProbNow: cur.probs.grotto,
     tint: nowTintTone(slot.head),
-    headline: sailorLine(slot),
+    headline: sailorLine(slot, reportedStatus === "closed" && isWithinGrottoHours(now, timezone)),
     pattern: COPY.patternLine({ band: patternBand(cur.dp), pressHpa: cur.press }),
     updatedLine,
     capriNowLine,
@@ -211,6 +218,8 @@ export interface TodayCardView {
   line: string;
   confidence: ConfidenceView;
   top: OddsView[];
+  /** Grotto odds hour by hour, or null past HOURLY_MAX_LEAD. */
+  hourly: { hour: number; label: string; tone: PillTone }[] | null;
 }
 
 const AFTERNOON_END_HOUR = Math.max(...SLOT_HOURS.afternoon) + 1;
@@ -244,8 +253,24 @@ export function pickTodayCardsDay(
   return { day: days[i], isTomorrow: days[i].date !== todayDate };
 }
 
+/** Hourly while the forecast can carry that resolution, the slot average once
+ *  it cannot. See HOURLY_MAX_LEAD. */
+function hourlyOdds(
+  hours: CompactHour[],
+  date: string,
+  slotHours: readonly number[],
+  lead: number,
+): TodayCardView["hourly"] {
+  if (lead > HOURLY_MAX_LEAD) return null;
+  const cells = hours
+    .filter((h) => h.date === date && slotHours.includes(h.hour))
+    .map((h) => ({ hour: h.hour, label: `${pad2(h.hour)}:00`, tone: pillTone(h.probs.grotto) }));
+  return cells.length ? cells : null;
+}
+
 export function buildTodayCards(
   days: DayForecast[],
+  hours: CompactHour[],
   now: Date,
   timezone: string = LOCATION.timezone,
 ): TodayCardView[] {
@@ -276,6 +301,7 @@ export function buildTodayCards(
         pct: pct(slot.p[key]),
         tone: pillTone(slot.p[key]),
       })),
+      hourly: hourlyOdds(hours, today.date, SLOT_HOURS[def.key], today.lead),
     });
   }
   return cards;

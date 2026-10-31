@@ -16,10 +16,6 @@ import type { GrottoLive } from "@/lib/forecast/types";
 type Status = "open" | "closed" | "unknown";
 
 const FETCH_TIMEOUT_MS = 12_000;
-/** Live-bar path only; the recorder passes `fresh` to bypass it. Kept in step
- *  with the Cache-Control on /api/grotto, and no shorter -- every miss is a
- *  request to someone else's website. */
-const REVALIDATE_S = 600; // 10 min
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/124.0 Safari/537.36";
@@ -67,15 +63,14 @@ const SOURCES: GrottoSource[] = [
   { name: "capri.net", url: "https://www.capri.net/en/e/la-grotta-azzurra", parse: parseCapriNet },
 ];
 
-async function readSource(src: GrottoSource, fresh: boolean): Promise<Status> {
+async function readSource(src: GrottoSource): Promise<Status> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(src.url, {
       signal: controller.signal,
       headers: { "user-agent": USER_AGENT },
-      // The recorder needs an uncached read each poll; the live bar can cache.
-      ...(fresh ? { cache: "no-store" as const } : { next: { revalidate: REVALIDATE_S } }),
+      cache: "no-store",
     });
     if (!res.ok) return "unknown";
     return src.parse(await res.text());
@@ -86,9 +81,11 @@ async function readSource(src: GrottoSource, fresh: boolean): Promise<Status> {
   }
 }
 
-export async function fetchGrottoStatus({ fresh = false } = {}): Promise<GrottoLive> {
+/** Always uncached: a cached read here stacks with the route's own CDN cache,
+ *  and `checkedAt` then describes the request rather than the observation. */
+export async function fetchGrottoStatus(): Promise<GrottoLive> {
   const results = await Promise.all(
-    SOURCES.map(async (s) => ({ name: s.name, status: await readSource(s, fresh) })),
+    SOURCES.map(async (s) => ({ name: s.name, status: await readSource(s) })),
   );
 
   const definitive = results.filter((r) => r.status !== "unknown");

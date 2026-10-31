@@ -11,7 +11,7 @@
  * and ./activities. This file only decides how conditions are described.
  */
 
-import type { VerdictTone } from "./tuning";
+import { ACTIVITY_DOUBT, HEAD_WEIGHTS, VERDICT_BANDS, type VerdictTone } from "./tuning";
 
 export type ConfidenceTone = "high" | "medium" | "low";
 export type GrottoStatus = "open" | "closed" | "unknown";
@@ -20,11 +20,23 @@ export type GrottoDisplayTone = "open" | "closed" | "offHours" | "unknown";
 export type SlotTrend = "worse" | "better" | null;
 export type PatternBand = "fallingFast" | "easing" | "building" | "steady";
 
+/** Verdict chip wording. Hoisted out of COPY so the methodology can be
+ *  generated from it rather than transcribing it by hand. */
+const VERDICT_LABEL = {
+  calm: "Calm",
+  good: "Good",
+  uncertain: "Uncertain",
+  likelyOff: "Likely off",
+  off: "Off",
+} satisfies Record<VerdictTone, string>;
+
+const asPct = (p: number) => `${Math.round(p * 100)}%`;
+
 /** Thresholds that decide which *sentence* is shown (wording, not model tuning). */
 export const SUMMARY_THRESHOLDS = {
   grottoShut: 0.8,
   grottoRefuse: 0.55,
-  grottoBorderline: 0.3,
+  grottoBorderline: ACTIVITY_DOUBT,
   tourRough: 0.4,
 } as const;
 
@@ -117,7 +129,8 @@ export const COPY = {
     } satisfies Record<GrottoDisplayTone, string>,
     line: {
       open: "The grotto can be visited today, weather permitting. The boatmen make the final call at the cave.",
-      weatherClosed: "Reported closed by sea conditions today. It can reopen the same day.",
+      // No cause: the source publishes "closed", never a reason for it.
+      weatherClosed: "Reported closed today. The boatmen decide at the cave, and it can reopen the same day.",
       offHoursBeforeOpen: "Outside opening hours. Opens around 09:00.",
       offHoursAfterClose: "Closed for the day. Opens again tomorrow around 09:00.",
       unknown: "The live report couldn't be read right now.",
@@ -176,6 +189,9 @@ export const COPY = {
   },
 
   today: {
+    hourlyHeading: "Hour by hour",
+    hourlyAria: (from: string, to: string) =>
+      `Blue Grotto closure odds by hour, ${from} to ${to}`,
     morning: { title: "This morning", sub: "09:00 – 13:00" },
     afternoon: { title: "This afternoon", sub: "13:00 – 18:00" },
     /** Used once today's afternoon has ended and the cards roll to tomorrow. */
@@ -210,13 +226,7 @@ export const COPY = {
     tomorrowPrefix: "Tomorrow",
   },
 
-  verdictLabel: {
-    calm: "Calm",
-    good: "Good",
-    uncertain: "Uncertain",
-    likelyOff: "Likely off",
-    off: "Off",
-  } satisfies Record<VerdictTone, string>,
+  verdictLabel: VERDICT_LABEL,
 
   confidenceShort: {
     high: "High confidence",
@@ -235,6 +245,7 @@ export const COPY = {
     northerly,
     northWind,
     springTide,
+    reportedClosed = false,
   }: {
     grotto: number;
     tour: number;
@@ -244,6 +255,8 @@ export const COPY = {
     northWind: boolean;
     /** Within a few days of a new or full moon. */
     springTide: boolean;
+    /** The cave is shut right now, whatever the model expected. */
+    reportedClosed?: boolean;
   }): string {
     const t = SUMMARY_THRESHOLDS;
     if (grotto > t.grottoShut) {
@@ -257,6 +270,11 @@ export const COPY = {
       return northWind
         ? "Wind from the north is pushing chop onto the cave mouth. The boatmen often refuse entry in these conditions."
         : "Rough at the Blue Grotto. The boatmen often refuse entry in these conditions.";
+    // Say what the boatmen did, rather than report calm above a closed cave.
+    if (reportedClosed)
+      return grotto > t.grottoBorderline
+        ? "The sea is borderline, and the boatmen have closed the Blue Grotto today."
+        : "The sea reads calm, but the boatmen have closed the Blue Grotto today.";
     if (grotto > t.grottoBorderline)
       return "Borderline at the Blue Grotto. It could go either way, and the boatmen decide at the cave.";
     if (tour > t.tourRough)
@@ -348,7 +366,9 @@ export const COPY = {
       {
         lead: "The percentages.",
         body:
-          "Each one is the chance that activity is closed or cancelled in that time slot. Every activity has its own breaking point: the Blue Grotto's mouth is barely a metre high, so it closes once swell lifts the entrance water 30–40 cm. It faces northwest, so N/NW/WNW swell hits it head-on. Swell from the west and southwest reaches it too, across open water; short wind chop from that side does not, and a sea from the south or east is blocked by the island altogether. A steady wind from the north shuts it on its own, in a sea that looks flat on every chart: it blows straight down the Gulf of Naples onto the cave, and over the recorded days a northerly of even a few knots nearly always kept the grotto closed. Its odds also lean up for the three days from each new or full moon, when the tides are largest: on otherwise calm days it shut about two days in five then, against one in seven the rest of the time. The grotto's figure never drops below 15%, because it was closed about one hour in seven even when nothing gave a reason, and it runs cautious: at 30–60% it was closed about four hours in five. Boat tours give up around 1.2 m or 18 kt. Hydrofoils cancel before car ferries; Amalfi Coast routes before both.",
+          // Only sourced or recorded figures here. A number the code merely tunes must
+          // not be quoted as though it had been measured at the cave.
+          "Each one is the chance that activity is closed or cancelled in that time slot. Every activity has its own breaking point: the Blue Grotto's mouth is barely a metre high, so very little rise at the entrance is enough to stop the boats. It faces northwest, so N/NW/WNW swell hits it head-on. Swell from the west and southwest reaches it too, across open water; short wind chop from that side does not, and a sea from the south or east is blocked by the island altogether. A steady wind from the north shuts it on its own, in a sea that looks flat on every chart: it blows straight down the Gulf of Naples onto the cave, and over the recorded days a northerly of even a few knots nearly always kept the grotto closed. Its odds also lean up for the three days from each new or full moon, when the tides are largest: on otherwise calm days it shut about two days in five then, against one in seven the rest of the time. The grotto's figure never drops below 15%, because it was closed about one hour in seven even when nothing gave a reason, and it runs cautious: at 30–60% it was closed about four hours in five. Boat tours give up around 1.2 m or 18 kt. Hydrofoils cancel before car ferries; Amalfi Coast routes before both.",
       },
       {
         lead: "Today's bar.",
@@ -357,8 +377,17 @@ export const COPY = {
       },
       {
         lead: "The verdict chips.",
+        // Generated from the constants, so the prose cannot drift from them.
         body:
-          "Calm (under 13% chance sea activities are cancelled), Good (to 30%), Uncertain (to 50%), Likely off (to 72%), Off (above). The figure weighs the Blue Grotto at 62% and a boat tour at 38%, since those are the plans that break first.",
+          VERDICT_BANDS.filter((b) => Number.isFinite(b.max))
+            .map(
+              (b, i) =>
+                `${VERDICT_LABEL[b.tone]} (${i === 0 ? "under " : "to "}${asPct(b.max)} chance sea activities are cancelled)`,
+            )
+            .join(", ") +
+          `, ${VERDICT_LABEL.off} (above). The figure weighs the Blue Grotto at ${asPct(
+            HEAD_WEIGHTS.grotto ?? 0,
+          )} and a boat tour at ${asPct(HEAD_WEIGHTS.tour ?? 0)}, since those are the plans that break first.`,
       },
       {
         lead: "The confidence line.",

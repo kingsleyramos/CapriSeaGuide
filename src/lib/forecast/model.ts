@@ -57,6 +57,8 @@ export function grottoProb(h: ProbInputs): number {
   let p = logistic(effectiveSwell, g.swell.effMid, g.swell.effK);
   p = orProb(p, logistic(h.wind * windFace, g.wind.mid, g.wind.k) * g.wind.weight);
   p = orProb(p, logistic(h.north, g.northWind.mid, g.northWind.k) * g.northWind.weight);
+  // Hourly water level stays out: its ~41 cm swing spans this curve's whole 10-90%
+  // transition (see tide.test), so the cave would flip twice a day in fair weather.
   p = orProb(p, logistic(h.springTide, g.springTide.mid, g.springTide.k) * g.springTide.weight);
 
   const surge = g.longPeriodSurge;
