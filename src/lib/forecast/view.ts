@@ -11,6 +11,7 @@ import { COPY, type ConfidenceTone } from "@/config/copy";
 import { isWithinGrottoHours } from "./grotto-hours";
 import {
   GROTTO_CLOSING_DIRS,
+  HOURLY_MAX_LEAD,
   LOCATION,
   NORTHERLY_SAILOR,
   REFRESH,
@@ -207,6 +208,8 @@ export interface TodayCardView {
   line: string;
   confidence: ConfidenceView;
   top: OddsView[];
+  /** Grotto odds hour by hour, or null past HOURLY_MAX_LEAD. */
+  hourly: { hour: number; label: string; tone: PillTone }[] | null;
 }
 
 const AFTERNOON_END_HOUR = Math.max(...SLOT_HOURS.afternoon) + 1;
@@ -240,8 +243,24 @@ export function pickTodayCardsDay(
   return { day: days[i], isTomorrow: days[i].date !== todayDate };
 }
 
+/** Hourly while the forecast can carry that resolution, the slot average once
+ *  it cannot. See HOURLY_MAX_LEAD. */
+function hourlyOdds(
+  hours: CompactHour[],
+  date: string,
+  slotHours: readonly number[],
+  lead: number,
+): TodayCardView["hourly"] {
+  if (lead > HOURLY_MAX_LEAD) return null;
+  const cells = hours
+    .filter((h) => h.date === date && slotHours.includes(h.hour))
+    .map((h) => ({ hour: h.hour, label: `${pad2(h.hour)}:00`, tone: pillTone(h.probs.grotto) }));
+  return cells.length ? cells : null;
+}
+
 export function buildTodayCards(
   days: DayForecast[],
+  hours: CompactHour[],
   now: Date,
   timezone: string = LOCATION.timezone,
 ): TodayCardView[] {
@@ -272,6 +291,7 @@ export function buildTodayCards(
         pct: pct(slot.p[key]),
         tone: pillTone(slot.p[key]),
       })),
+      hourly: hourlyOdds(hours, today.date, SLOT_HOURS[def.key], today.lead),
     });
   }
   return cards;

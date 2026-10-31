@@ -247,21 +247,21 @@ describe("view models", () => {
   const eveningCapri = new Date("2026-08-03T16:30:00Z"); // 18:30 Rome, after the PM slot
 
   it("today cards render both halves with copy-driven titles", () => {
-    const cards = buildTodayCards(days, noonCapri, "Europe/Rome");
+    const cards = buildTodayCards(days, report.hours, noonCapri, "Europe/Rome");
     expect(cards.map((c) => c.key)).toEqual(["morning", "afternoon"]);
     expect(cards[0].title).toBe("This morning");
     expect(cards[0].top).toHaveLength(3);
   });
 
   it("today cards roll to tomorrow once the afternoon has ended", () => {
-    const cards = buildTodayCards(days, eveningCapri, "Europe/Rome");
+    const cards = buildTodayCards(days, report.hours, eveningCapri, "Europe/Rome");
     expect(cards[0].title).toBe("Tomorrow morning");
     expect(cards[1].title).toBe("Tomorrow afternoon");
   });
 
   it("today cards skip a stale leading day after midnight", () => {
     const pastMidnight = new Date("2026-08-03T22:30:00Z"); // 00:30 Rome, Aug 4
-    const cards = buildTodayCards(days, pastMidnight, "Europe/Rome");
+    const cards = buildTodayCards(days, report.hours, pastMidnight, "Europe/Rome");
     expect(cards[0].title).toBe("This morning"); // Aug 4 is now today, not tomorrow
   });
 

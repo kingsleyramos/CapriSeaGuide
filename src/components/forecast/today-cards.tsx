@@ -1,4 +1,6 @@
 import { COPY } from "@/config/copy";
+import type { PillTone } from "@/config/tuning";
+import { cn } from "@/lib/utils";
 import type { TodayCardView } from "@/lib/forecast/view";
 import { Card } from "@/components/ui/card";
 import { ConfDot, OddsPill, VerdictChip } from "@/components/ui/chip";
@@ -32,9 +34,45 @@ function TodaySlotCard({ card }: { card: TodayCardView }) {
           </div>
         ))}
       </div>
+
+      {card.hourly && <HourStrip hours={card.hourly} />}
     </Card>
   );
 }
+
+/** The slot's grotto odds hour by hour: an average reads "borderline" across a
+ *  morning that is fine at 09:00 and unworkable by 12:00. */
+function HourStrip({ hours }: { hours: NonNullable<TodayCardView["hourly"]> }) {
+  return (
+    <div className="mt-3 border-t border-line-soft pt-3">
+      <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-ink-mute">
+        {COPY.today.hourlyHeading}
+      </div>
+      <div
+        className="flex gap-1"
+        role="img"
+        aria-label={COPY.today.hourlyAria(hours[0].label, hours[hours.length - 1].label)}
+      >
+        {hours.map((h) => (
+          <div key={h.hour} className="flex-1 text-center" aria-hidden>
+            <div className={cn("h-1.5 rounded-full", hourFillClass[h.tone])} />
+            <div className="mt-1 text-[10px] font-medium tabular-nums text-ink-mute">
+              {h.label.slice(0, 2)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Solid fills, not the pill backgrounds: these are 6px bars with no text on
+ *  them, so they need the foreground's weight to stay visible. */
+const hourFillClass: Record<PillTone, string> = {
+  low: "bg-pill-low-fg",
+  mid: "bg-pill-mid-fg",
+  high: "bg-pill-high-fg",
+};
 
 export function TodayCards({ cards }: { cards: TodayCardView[] }) {
   if (!cards.length) return null;
