@@ -49,16 +49,11 @@ export const SOURCES = {
 
 /**
  * Direction model. `cosFace` returns a 0.22–1.0 exposure factor for how
- * head-on a swell/wind from `dir` hits a shore facing `faceBearing`.
- *
- * `legacyInverted` reproduces the delivered design's bug, where the factor
- * peaked for a swell arriving from the *opposite* bearing (so SE swell
- * "closed" the NW-facing grotto). Left here as a switch for exact reproduction;
- * the corrected default matches the design's own prose and Open-Meteo's
- * documented "coming from" direction convention.
+ * head-on a swell/wind from `dir` hits a shore facing `faceBearing`. The sign
+ * convention follows Open-Meteo's documented "direction the waves are coming
+ * from".
  */
 export const DIRECTION = {
-  legacyInverted: false,
   /** Floor of the exposure factor for a fully off-axis direction. */
   floor: 0.22,
 } as const;
@@ -67,7 +62,9 @@ export const DIRECTION = {
 export const GROTTO = {
   faceBearing: 322,
   period: { clampMin: 3, clampMax: 14, ref: 6, exp: 0.35 },
-  swell: { effMid: 0.34, effK: 0.062 },
+  /** Measured against total significant wave height (not `h.swell`, which no
+   *  probability function reads), weighted by exposure and scaled by period. */
+  effectiveWave: { mid: 0.34, k: 0.062 },
   wind: { mid: 17, k: 3.2, weight: 0.85 },
   /** Extra long-period swell surge term. */
   longPeriodSurge: { periodMin: 8, faceMin: 0.7, waveMid: 0.3, waveK: 0.09, weight: 0.5 },
@@ -92,16 +89,20 @@ export const GROTTO_HOURS = {
 /** How many past days the Blue Grotto history shows. */
 export const HISTORY_DAYS = 7;
 
+/** Odds at which one activity stops reading as "probably fine". Shared, because
+ *  the pill band, the pale forecast bar and the "borderline" sentence are one
+ *  judgement and must move together. */
+export const ACTIVITY_DOUBT = 0.3;
+
 /**
  * Bands for the grotto's forecast, i.e. the pale part of the live day's bar:
  * today's hours after the last recorded check, and all of tomorrow once today
  * has closed. For each hour, a modelled closure chance at or above
  * `possibleClosureAt` shows as "possible closure"; below it, "expected open".
- * We reuse the PILL_BANDS "low" cutoff (0.3) so this pale bar and the activity
- * pill can never tell different stories. Past days are never forecast this way:
- * with no recorded call they simply read "No data".
+ * Past days are never forecast this way: with no recorded call they simply read
+ * "No data".
  */
-export const GROTTO_FORECAST = { possibleClosureAt: 0.3 } as const;
+export const GROTTO_FORECAST = { possibleClosureAt: ACTIVITY_DOUBT } as const;
 
 /** Gust term added to every standard activity's closure probability. */
 export const GUST = { midOffset: 8, kOffset: 1, weight: 0.6 } as const;
@@ -131,7 +132,7 @@ export const VERDICT_BANDS: { max: number; tone: VerdictTone }[] = [
 /** Per-activity "chance it's off" pill bands. */
 export type PillTone = "low" | "mid" | "high";
 export const PILL_BANDS: { max: number; tone: PillTone }[] = [
-  { max: 0.3, tone: "low" },
+  { max: ACTIVITY_DOUBT, tone: "low" },
   { max: 0.6, tone: "mid" },
   { max: Infinity, tone: "high" },
 ];

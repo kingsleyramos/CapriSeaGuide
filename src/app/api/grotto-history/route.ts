@@ -122,9 +122,17 @@ export async function GET(req: Request) {
         }));
       }
     }
+    // An observation outranks a forecast, so a reported closure caps the rest of
+    // the day. Capped rather than forced closed, because it can genuinely reopen.
+    const reportedClosedNow = reportedBar.at(-1)?.tone === "closed";
     const forecastBar: BarSegment[] = modeledSegments(oddsOf(liveDate), liveDate, {
       fromMin: reportedMin ?? openMin,
-    }).map((s) => ({ startMin: s.startMin, endMin: s.endMin, tone: s.tone, label: null }));
+    }).map((s) => ({
+      startMin: s.startMin,
+      endMin: s.endMin,
+      tone: reportedClosedNow && s.tone === "expectedOpen" ? "possibleClosure" : s.tone,
+      label: null,
+    }));
     const liveBar = [...reportedBar, ...forecastBar];
     const today: TodayPayload | null = liveBar.length
       ? {

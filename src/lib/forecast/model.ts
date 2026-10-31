@@ -39,8 +39,8 @@ export function grottoProb(h: ProbInputs): number {
   const swellFace = cosFace(h.wDir, g.faceBearing);
   const windFace = cosFace(h.dir, g.faceBearing);
 
-  const effectiveSwell = h.wave * swellFace * perFactor;
-  let p = logistic(effectiveSwell, g.swell.effMid, g.swell.effK);
+  const effectiveWave = h.wave * swellFace * perFactor;
+  let p = logistic(effectiveWave, g.effectiveWave.mid, g.effectiveWave.k);
   p = orProb(p, logistic(h.wind * windFace, g.wind.mid, g.wind.k) * g.wind.weight);
 
   const surge = g.longPeriodSurge;

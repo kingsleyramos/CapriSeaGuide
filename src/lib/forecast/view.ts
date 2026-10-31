@@ -8,6 +8,7 @@
 
 import { type ActivityKey, ACTIVITIES, TODAY_TOP_ACTIVITIES } from "@/config/activities";
 import { COPY, type ConfidenceTone } from "@/config/copy";
+import { isWithinGrottoHours } from "./grotto-hours";
 import {
   GROTTO_CLOSING_DIRS,
   LOCATION,
@@ -75,12 +76,14 @@ const fmtDayMonth = (d: Date, timezone: string) =>
 const northerly = (wDir: number) =>
   (NORTHERLY_SAILOR as readonly string[]).includes(compass(wDir));
 
-/** The plain-language sea summary for a slot. */
-export const sailorLine = (s: Slot) =>
+/** The plain-language sea summary for a slot. `reportedClosed` applies only to
+ *  the live slot: a future slot has nothing observed to contradict it. */
+export const sailorLine = (s: Slot, reportedClosed = false) =>
   COPY.sailorLine({
     grotto: s.p.grotto,
     tour: s.p.tour,
     northerly: northerly(s.wDir),
+    reportedClosed,
   });
 
 export const verdictView = (head: number): VerdictView => {
@@ -147,6 +150,9 @@ export function buildNowView(
   fetchedAt: number,
   now: Date,
   timezone: string,
+  /** The boatmen's reported status, when there is one. Only the live card takes
+   *  it: an observation can contradict today's forecast, not next Friday's. */
+  reportedStatus?: "open" | "closed" | "unknown",
 ): NowView {
   const cur = pickCurrentHour(hours, now, timezone);
   const slot = buildSlot([cur], 0)!;
@@ -176,7 +182,7 @@ export function buildNowView(
     verdict: verdictView(slot.head),
     grottoProbNow: cur.probs.grotto,
     tint: nowTintTone(slot.head),
-    headline: sailorLine(slot),
+    headline: sailorLine(slot, reportedStatus === "closed" && isWithinGrottoHours(now, timezone)),
     pattern: COPY.patternLine({ band: patternBand(cur.dp), pressHpa: cur.press }),
     updatedLine,
     capriNowLine,
