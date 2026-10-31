@@ -34,15 +34,31 @@ async function pipeline(commands: Command[]): Promise<unknown[]> {
   return json.map((r) => r.result);
 }
 
-const memberOf = (r: GrottoReading) => `${r.t}:${r.status}`;
+const isStatus = (s: unknown): s is GrottoReading["status"] =>
+  s === "open" || s === "closed" || s === "unknown";
 
-function parseMember(member: string): GrottoReading | null {
+/** JSON, so a reading can carry more than a status word. Sorted-set members
+ *  must be unique, which the embedded timestamp guarantees. */
+export const memberOf = (r: GrottoReading) =>
+  JSON.stringify({ t: r.t, s: r.status, ...(r.conflict ? { c: 1 } : {}) });
+
+/** The log is append-only, so legacy `"<epoch>:<status>"` rows stay readable
+ *  forever. */
+export function parseMember(member: string): GrottoReading | null {
+  if (member.startsWith("{")) {
+    try {
+      const o = JSON.parse(member) as { t?: unknown; s?: unknown; c?: unknown };
+      if (typeof o.t !== "number" || !Number.isFinite(o.t) || !isStatus(o.s)) return null;
+      return { t: o.t, status: o.s, conflict: o.c === 1 };
+    } catch {
+      return null;
+    }
+  }
   const i = member.indexOf(":");
   if (i < 0) return null;
   const t = Number(member.slice(0, i));
   const status = member.slice(i + 1);
-  if (!Number.isFinite(t)) return null;
-  if (status !== "open" && status !== "closed" && status !== "unknown") return null;
+  if (!Number.isFinite(t) || !isStatus(status)) return null;
   return { t, status };
 }
 
@@ -50,6 +66,24 @@ function parseMember(member: string): GrottoReading | null {
 export async function recordReading(reading: GrottoReading): Promise<void> {
   if (!isStoreConfigured()) return;
   await pipeline([["ZADD", KEY, reading.t, memberOf(reading)]]);
+}
+
+/** Newest reading in [fromMs, toMs], or null. The live chip and the timeline
+ *  both read it, so they cannot disagree. */
+export async function readLatestReading(
+  fromMs: number,
+  toMs: number,
+): Promise<GrottoReading | null> {
+  if (!isStoreConfigured()) return null;
+  try {
+    const [members] = (await pipeline([
+      ["ZREVRANGEBYSCORE", KEY, toMs, fromMs, "LIMIT", 0, 1],
+    ])) as [string[]];
+    const newest = members?.[0];
+    return newest ? parseMember(newest) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Read readings in [fromMs, toMs], oldest first. Resilient: returns [] on any

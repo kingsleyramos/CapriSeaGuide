@@ -132,4 +132,7 @@ export interface GrottoReading {
   /** Epoch ms of the reading. */
   t: number;
   status: "open" | "closed" | "unknown";
+  /** Whether the readable sources disagreed. Absent on rows recorded before it
+   *  was stored, which is why it is optional rather than defaulted to false. */
+  conflict?: boolean;
 }
