@@ -89,6 +89,19 @@ describe("an observation outranks the forecast", () => {
     expect(line("closed")).not.toMatch(/no weather closures expected/i);
   });
 
+  it("does not call a borderline sea calm", () => {
+    const borderline = COPY.sailorLine({
+      grotto: 0.45,
+      tour: 0,
+      northerly: false,
+      northWind: false,
+      springTide: false,
+      reportedClosed: true,
+    });
+    expect(borderline).toMatch(/boatmen have closed/i);
+    expect(borderline).not.toMatch(/calm/i);
+  });
+
   it("ignores a reported closure outside opening hours", () => {
     // 02:00 Capri: the cave is shut because it is the middle of the night, which
     // says nothing about the sea.

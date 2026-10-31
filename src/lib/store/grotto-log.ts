@@ -125,6 +125,8 @@ export interface GrottoObservation {
     dir: number;
     gust: number;
     press: number;
+    north: number;
+    springTide: number;
   };
 }
 

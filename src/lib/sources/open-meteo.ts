@@ -183,7 +183,8 @@ export function normalize(
      * and comes from different models, so it survives a marine outage. With no
      * direction at all, fall back to the grotto's own bearing: full exposure,
      * rather than a value that quietly argues in the cave's favour.
-     */    const wDir = swellDir.length
+     */
+    const wDir = swellDir.length
       ? circularMean(swellDir)
       : waveDir.length
         ? circularMean(waveDir)

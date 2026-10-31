@@ -115,6 +115,8 @@ async function archive(now: Date, live: GrottoLive): Promise<void> {
         dir: h.dir,
         gust: h.gust,
         press: h.press,
+        north: h.north,
+        springTide: h.springTide,
       },
     });
   } catch {
