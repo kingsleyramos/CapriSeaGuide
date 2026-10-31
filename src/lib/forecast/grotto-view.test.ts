@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildGrottoTimeline,
   buildGrottoView,
+  grottoSeasonNote,
   type GrottoTimelinePayload,
 } from "./grotto-view";
 
@@ -39,6 +40,17 @@ describe("buildGrottoView state model", () => {
   it("surfaces a disagreement note when sources conflict", () => {
     const v = buildGrottoView({ ...base, conflict: true, verdict: "open", now: at("2026-08-04T10:00:00Z") });
     expect(v.line).toMatch(/disagree/);
+  });
+});
+
+describe("grottoSeasonNote", () => {
+  it("shows from November to March, by Capri's calendar", () => {
+    expect(grottoSeasonNote(at("2026-10-31T22:30:00Z"), TZ)).toBeNull(); // 23:30, 31 Oct
+    expect(grottoSeasonNote(at("2026-10-31T23:30:00Z"), TZ)).toMatch(/winter/); // 00:30, 1 Nov
+    expect(grottoSeasonNote(at("2027-01-15T10:00:00Z"), TZ)).toMatch(/winter/);
+    expect(grottoSeasonNote(at("2027-03-31T20:00:00Z"), TZ)).toMatch(/winter/); // 22:00, 31 Mar
+    expect(grottoSeasonNote(at("2027-03-31T22:30:00Z"), TZ)).toBeNull(); // 00:30, 1 Apr
+    expect(grottoSeasonNote(at("2026-08-04T10:00:00Z"), TZ)).toBeNull();
   });
 });
 

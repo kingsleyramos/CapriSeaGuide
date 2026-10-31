@@ -9,6 +9,7 @@
 import { type ActivityKey, ACTIVITIES, TODAY_TOP_ACTIVITIES } from "@/config/activities";
 import { COPY, type ConfidenceTone } from "@/config/copy";
 import {
+  GROTTO,
   GROTTO_CLOSING_DIRS,
   LOCATION,
   NORTHERLY_SAILOR,
@@ -29,6 +30,7 @@ import {
   nowTintTone,
   patternBand,
   pillTone,
+  swellReach,
   verdictTone,
 } from "./model";
 import type { CompactHour, DayForecast, Slot } from "./types";
@@ -72,15 +74,23 @@ const capriDay = (d: Date, timezone: string) =>
 const fmtDayMonth = (d: Date, timezone: string) =>
   d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: timezone });
 
-const northerly = (wDir: number) =>
-  (NORTHERLY_SAILOR as readonly string[]).includes(compass(wDir));
+/** Sea from one of `dirs`, big enough to be the reason rather than a bystander. */
+const seaFrom = (s: Slot, dirs: readonly string[]) =>
+  s.wave >= GROTTO.swell.effMid && dirs.includes(compass(s.wDir));
+
+/** Wind from the north past the point where it shuts the grotto by itself. */
+const northWind = (s: Slot) => s.north >= GROTTO.northWind.mid;
+/** Within the few days around a new or full moon that GROTTO.springTide leans on. */
+const springTide = (s: Slot) => s.springTide >= GROTTO.springTide.mid;
 
 /** The plain-language sea summary for a slot. */
 export const sailorLine = (s: Slot) =>
   COPY.sailorLine({
     grotto: s.p.grotto,
     tour: s.p.tour,
-    northerly: northerly(s.wDir),
+    northerly: seaFrom(s, NORTHERLY_SAILOR),
+    northWind: northWind(s),
+    springTide: springTide(s),
   });
 
 export const verdictView = (head: number): VerdictView => {
@@ -361,8 +371,11 @@ export function buildDayRow(
       { label: L.pressure, value: pair((x) => `${Math.round(x.press)} hPa`) },
     ],
     why: COPY.dayWhyLine({
-      closes: (GROTTO_CLOSING_DIRS as readonly string[]).includes(compass(s.wDir)),
+      closes: seaFrom(s, GROTTO_CLOSING_DIRS),
       fromLabel: compass(s.wDir),
+      northWind: northWind(s),
+      springTide: springTide(s),
+      reaches: swellReach(s.wDir) > 0,
       spreadWarn: s.spread > WHY_SPREAD_WARN,
       pressureWarn: s.dp < WHY_PRESSURE_WARN,
     }),

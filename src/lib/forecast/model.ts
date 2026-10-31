@@ -18,7 +18,7 @@ import {
   type VerdictTone,
 } from "@/config/tuning";
 import type { ConfidenceTone, PatternBand } from "@/config/copy";
-import { clamp, cosFace, logistic, orProb } from "./math";
+import { angleDelta, clamp, cosFace, logistic, orProb } from "./math";
 
 /** Inputs a probability calculation needs from one hour. */
 export interface ProbInputs {
@@ -29,6 +29,18 @@ export interface ProbInputs {
   wind: number;
   dir: number;
   gust: number;
+  /** Trailing northerly wind, kn (HourPoint.north). */
+  north: number;
+  /** HourPoint.springTide. */
+  springTide: number;
+}
+
+/** Share of a swell's height that reaches the cave mouth from `wDir` without
+ *  arriving head-on: GROTTO.swell.reach across the open arc, 0 behind the island. */
+export function swellReach(wDir: number): number {
+  const { share, fullWithin, noneBeyond } = GROTTO.swell.reach;
+  const offAxis = angleDelta(wDir, GROTTO.faceBearing);
+  return share * clamp((noneBeyond - offAxis) / (noneBeyond - fullWithin), 0, 1);
 }
 
 /** Chance the Blue Grotto entry is off, given one hour of conditions. */
@@ -39,9 +51,13 @@ export function grottoProb(h: ProbInputs): number {
   const swellFace = cosFace(h.wDir, g.faceBearing);
   const windFace = cosFace(h.dir, g.faceBearing);
 
-  const effectiveSwell = h.wave * swellFace * perFactor;
+  // The sea coming straight in, or the swell reaching round to the mouth,
+  // whichever is the larger.
+  const effectiveSwell = Math.max(h.wave * swellFace, h.swell * swellReach(h.wDir)) * perFactor;
   let p = logistic(effectiveSwell, g.swell.effMid, g.swell.effK);
   p = orProb(p, logistic(h.wind * windFace, g.wind.mid, g.wind.k) * g.wind.weight);
+  p = orProb(p, logistic(h.north, g.northWind.mid, g.northWind.k) * g.northWind.weight);
+  p = orProb(p, logistic(h.springTide, g.springTide.mid, g.springTide.k) * g.springTide.weight);
 
   const surge = g.longPeriodSurge;
   if (per >= surge.periodMin && swellFace > surge.faceMin) {

@@ -20,6 +20,13 @@ const MARINE_URL = "https://marine-api.open-meteo.com/v1/marine";
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 const ENSEMBLE_URL = "https://ensemble-api.open-meteo.com/v1/ensemble";
 
+/** The hourly columns each feed is asked for. Exported so the backtest requests
+ *  exactly what the app does, and cannot drift from it. */
+export const MARINE_HOURLY =
+  "wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_period,swell_wave_direction";
+export const WEATHER_HOURLY =
+  "wind_speed_10m,wind_direction_10m,wind_gusts_10m,pressure_msl,precipitation";
+
 const FETCH_TIMEOUT_MS = 12_000;
 /** Cache upstream responses for an hour (matches the page's refresh cadence). */
 const REVALIDATE_S = 3600;
@@ -230,8 +237,7 @@ async function fetchWindow({
   const marineUrl = buildUrl(MARINE_URL, {
     latitude: String(LOCATION.marine.lat),
     longitude: String(LOCATION.marine.lon),
-    hourly:
-      "wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_period,swell_wave_direction",
+    hourly: MARINE_HOURLY,
     timezone: LOCATION.timezone,
     models: SOURCES.waveModels.join(","),
     ...win,
@@ -239,7 +245,7 @@ async function fetchWindow({
   const weatherUrl = buildUrl(FORECAST_URL, {
     latitude: String(LOCATION.island.lat),
     longitude: String(LOCATION.island.lon),
-    hourly: "wind_speed_10m,wind_direction_10m,wind_gusts_10m,pressure_msl,precipitation",
+    hourly: WEATHER_HOURLY,
     wind_speed_unit: "kn",
     timezone: LOCATION.timezone,
     models: SOURCES.weatherModels.join(","),

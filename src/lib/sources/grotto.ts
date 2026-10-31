@@ -6,10 +6,9 @@
  * conflict and prefer the primary. Running this server-side means no dependency
  * on public CORS proxies (the delivered design leaned on r.jina.ai / allorigins).
  *
- * capri.net exposes a reliable text banner and is the primary. bluegrotto.tours
- * shows a JS/image traffic-light with no server-readable state word, so it is a
- * best-effort secondary that usually returns "unknown". That is harmless, and it will
- * start contributing automatically if that ever becomes parseable.
+ * The boatmen's own feed, behind the widget on motoscafisticapri.com, is the
+ * primary. capri.net mirrors it, but replaces its banner with static text from
+ * November to February and then reads "unknown".
  */
 
 import type { GrottoLive } from "@/lib/forecast/types";
@@ -39,7 +38,7 @@ const flatten = (html: string) =>
     .toLowerCase();
 
 /**
- * capri.net (primary). The live "closed" banner is authoritative when present.
+ * capri.net. The live "closed" banner is authoritative when present.
  * The "can be visited today" phrase also lives in a script template that is
  * always present, so it only means "open" when the closed banner is absent (or
  * appears after it).
@@ -53,28 +52,19 @@ export function parseCapriNet(html: string): Status {
   return "unknown";
 }
 
-/**
- * bluegrotto.tours (best-effort secondary). The live light is JS/image
- * rendered with no reliable server-readable state, so we are deliberately
- * conservative: only a *status-scoped* image (its src/alt names a light /
- * status / open-closed context) is trusted for its colour. A stray green or
- * red asset elsewhere on the page must not manufacture a status, otherwise it
- * could override the primary or fake a "sources disagree".
- */
-export function parseBlueGrotto(html: string): Status {
-  const STATUS_SCOPED = /status|semaforo|traffic|light|open|clos/;
-  for (const tag of html.match(/<img[^>]+>/gi) ?? []) {
-    const attrs = tag.toLowerCase();
-    if (!STATUS_SCOPED.test(attrs)) continue;
-    if (/green/.test(attrs)) return "open";
-    if (/red/.test(attrs)) return "closed";
+/** The boatmen's feed: `{"status":"open"|"closed","last_modify":"<epoch s>"}`. */
+export function parseBoatmen(json: string): Status {
+  try {
+    const { status } = JSON.parse(json) as { status?: unknown };
+    return status === "open" || status === "closed" ? status : "unknown";
+  } catch {
+    return "unknown";
   }
-  return "unknown";
 }
 
 const SOURCES: GrottoSource[] = [
+  { name: "motoscafisti", url: "https://salsa-api.trustedsite.net/json/Bluegrotto", parse: parseBoatmen },
   { name: "capri.net", url: "https://www.capri.net/en/e/la-grotta-azzurra", parse: parseCapriNet },
-  { name: "bluegrotto.tours", url: "https://www.bluegrotto.tours/opening-times/", parse: parseBlueGrotto },
 ];
 
 async function readSource(src: GrottoSource, fresh: boolean): Promise<Status> {
