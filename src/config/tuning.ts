@@ -49,21 +49,31 @@ export const SOURCES = {
 
 /**
  * Direction model. `cosFace` returns a 0.22–1.0 exposure factor for how
- * head-on a swell/wind from `dir` hits a shore facing `faceBearing`.
- *
- * `legacyInverted` reproduces the delivered design's bug, where the factor
- * peaked for a swell arriving from the *opposite* bearing (so SE swell
- * "closed" the NW-facing grotto). Left here as a switch for exact reproduction;
- * the corrected default matches the design's own prose and Open-Meteo's
- * documented "coming from" direction convention.
+ * head-on a swell/wind from `dir` hits a shore facing `faceBearing`. The sign
+ * convention follows Open-Meteo's documented "direction the waves are coming
+ * from".
  */
 export const DIRECTION = {
-  legacyInverted: false,
   /** Floor of the exposure factor for a fully off-axis direction. */
   floor: 0.22,
 } as const;
 
-/** Blue Grotto: bespoke physics (barely-a-metre-high mouth, faces NW). */
+/**
+ * Blue Grotto: bespoke physics.
+ *
+ * SOURCED. The mouth is about 2 m wide and roughly 1 m high at low tide, and a
+ * boat needs something like 90 cm to pass with passengers lying flat
+ * (Wikipedia, capri.com). It faces north-west, so N/NW/WNW swell arrives
+ * head-on while a southerly barely reaches it.
+ *
+ * NOT SOURCED: `swell.effMid`, the most load-bearing number here. Public
+ * guides put closure around 30 cm of rise at the entrance, the same order as
+ * 0.34 -- corroboration, not derivation, and they cite nothing either. A 20%
+ * error swings the grotto's odds ~25 points on a typical day, enough to move
+ * the verdict chip on its own.
+ *
+ * TODO: score this against the recorded archive once it covers a winter.
+ */
 export const GROTTO = {
   faceBearing: 322,
   period: { clampMin: 3, clampMax: 14, ref: 6, exp: 0.35 },
@@ -102,20 +112,32 @@ export const GROTTO_HOURS = {
   summerMonths: [3, 4, 5, 6, 7, 8, 9],
 } as const;
 
+/**
+ * Furthest day ahead that still earns hour-by-hour detail. Past this the models
+ * no longer resolve hour-to-hour variation, so distinct percentages would be
+ * detail invented from noise, and read as more certain than the average.
+ */
+export const HOURLY_MAX_LEAD = 1;
+
 /** How many past days the Blue Grotto history shows. */
 export const HISTORY_DAYS = 7;
+
+/** Odds at which one activity stops reading as "probably fine". Shared, because
+ *  the pill band, the pale forecast bar and the "borderline" sentence are one
+ *  judgement and must move together. */
+export const ACTIVITY_DOUBT = 0.3;
 
 /**
  * Bands for the grotto's forecast, i.e. the pale part of the live day's bar:
  * today's hours after the last recorded check, and all of tomorrow once today
  * has closed. For each hour, a modelled closure chance at or above
  * `possibleClosureAt` shows as "likely closed"; below it, "expected open".
- * We reuse the PILL_BANDS "low" cutoff (0.3), so with no reading to go on the
- * pale bar and the activity pill say the same thing; after a recorded call the
- * bar follows the recorder instead (GROTTO_PERSISTENCE). Past days are never
- * forecast this way: with no recorded call they simply read "No data".
+ * With no reading to go on, the pale bar and the activity pill say the same thing;
+ * after a recorded call the bar follows the recorder instead (GROTTO_PERSISTENCE).
+ * Past days are never forecast this way: with no recorded call they simply read
+ * "No data".
  */
-export const GROTTO_FORECAST = { possibleClosureAt: 0.3 } as const;
+export const GROTTO_FORECAST = { possibleClosureAt: ACTIVITY_DOUBT } as const;
 
 /** How long the last recorded call outweighs the model on the live day's bar, as
  *  exp(-lagHours / tau). A closure holds for hours; an open reading says little. */
@@ -149,7 +171,7 @@ export const VERDICT_BANDS: { max: number; tone: VerdictTone }[] = [
 /** Per-activity "chance it's off" pill bands. */
 export type PillTone = "low" | "mid" | "high";
 export const PILL_BANDS: { max: number; tone: PillTone }[] = [
-  { max: 0.3, tone: "low" },
+  { max: ACTIVITY_DOUBT, tone: "low" },
   { max: 0.6, tone: "mid" },
   { max: Infinity, tone: "high" },
 ];
@@ -170,7 +192,14 @@ export const NOW_TINT_BANDS: { max: number; tone: NowTone }[] = [
 export const CONFIDENCE = {
   base: 0.94,
   leadPenaltyPerDay: 0.075,
-  spread: { divisor: 14, max: 0.3 },
+  /*
+   * Sized from a week of live spread: median 3.44 kn-equivalent, p95 6.65, max
+   * 12.92. At 45 a median hour docks ~0.08 and the cap is left as a guard
+   * against genuine disarray, which puts High today and tomorrow, Medium
+   * mid-week, Low at the far end. Set it much lower and typical hours pin the
+   * cap, making High unreachable at any lead.
+   */
+  spread: { divisor: 45, max: 0.3 },
   pressure: { deadband: 2, divisor: 14, max: 0.22 },
   /** Penalty for sitting near the 50% knife-edge. */
   thresholdWeight: 0.42,

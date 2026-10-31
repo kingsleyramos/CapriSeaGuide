@@ -11,7 +11,7 @@
  * module that knows Open-Meteo's URL shape and column-naming scheme.
  */
 
-import { FORECAST_DAYS, HISTORY_DAYS, LOCATION, SOURCES } from "@/config/tuning";
+import { FORECAST_DAYS, GROTTO, HISTORY_DAYS, LOCATION, SOURCES } from "@/config/tuning";
 import { PublicError } from "@/lib/errors";
 import { mean, std } from "@/lib/forecast/math";
 import type { RawHour, SourceMeta } from "@/lib/forecast/types";
@@ -152,7 +152,18 @@ export function normalize(
     const j = wIdx.get(t);
     const k = eIdx.get(t);
 
-    // Marine consensus
+    /*
+     * Marine consensus. The `:` fallbacks below feed the probability model
+     * directly whenever a column is missing, and none is derived:
+     *
+     *   swell = wave * 0.7   asserted, and shown to readers as "Swell"
+     *   per   = 5 s          a short, benign period, so it damps rather than
+     *                        amplifies the grotto term
+     *   gust  = wind * 1.45  a real rule of thumb, but uncited
+     *   press = 1015         near ISA's 1013.25, unexplained why it differs
+     *
+     * They keep a missing hour from throwing; read them as assumptions.
+     */
     const waves = acrossModels(mh, "wave_height", M, i);
     const wave = waves.length ? mean(waves) : 0;
     const swells = acrossModels(mh, "swell_wave_height", M, i);
@@ -160,18 +171,27 @@ export function normalize(
     const swellPer = acrossModels(mh, "swell_wave_period", M, i);
     const wavePer = acrossModels(mh, "wave_period", M, i);
     const per = swellPer.length ? mean(swellPer) : wavePer.length ? mean(wavePer) : 5;
-    const swellDir = acrossModels(mh, "swell_wave_direction", M, i);
-    const waveDir = acrossModels(mh, "wave_direction", M, i);
-    const wDir = swellDir.length
-      ? circularMean(swellDir)
-      : waveDir.length
-        ? circularMean(waveDir)
-        : 0;
-
     // Weather consensus (j may be missing if the time axes differ)
     const winds = j != null ? acrossModels(wh, "wind_speed_10m", W, j) : [];
     const wind = winds.length ? mean(winds) : 0;
     const dirs = j != null ? acrossModels(wh, "wind_direction_10m", W, j) : [];
+
+    const swellDir = acrossModels(mh, "swell_wave_direction", M, i);
+    const waveDir = acrossModels(mh, "wave_direction", M, i);
+    /*
+     * Wind direction is the third choice because seas mostly run with the wind
+     * and comes from different models, so it survives a marine outage. With no
+     * direction at all, fall back to the grotto's own bearing: full exposure,
+     * rather than a value that quietly argues in the cave's favour.
+     */
+    const wDir = swellDir.length
+      ? circularMean(swellDir)
+      : waveDir.length
+        ? circularMean(waveDir)
+        : dirs.length
+          ? circularMean(dirs)
+          : GROTTO.faceBearing;
+
     const dir = dirs.length ? circularMean(dirs) : wDir;
     const gusts = j != null ? acrossModels(wh, "wind_gusts_10m", W, j) : [];
     const gust = gusts.length ? mean(gusts) : wind * 1.45;

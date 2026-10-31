@@ -30,8 +30,8 @@ public.
  Open-Meteo forecast (6 NWP models)├─▶ /api/forecast ─▶ engine ─▶ numeric report ─▶ client renders
  Open-Meteo ensemble (51 members)  ┘        (cached hourly)         (view layer → copy)
 
- boatmen's feed + capri.net ────────▶ /api/grotto ─▶ cross-checked live status
-                                            (cached 10 min)
+ boatmen's feed + capri.net ─▶ recorder ─▶ /api/grotto ─▶ cross-checked live status
+                            (every 10 min) (cached 1 min)
 
  Open-Meteo (past 7d + today/tomorrow) ┐
  recorded calls (Upstash, optional)    ├▶ /api/grotto-history ─▶ today's bar + 7-day history
@@ -107,6 +107,11 @@ exactly and scored against the log:
 npm run backtest   # needs the store credentials and the network; ~10 s
 ```
 
+From here on the recorder also keeps the forecast itself. Each poll stores the
+chance the app published for that hour, beside the inputs behind it and a
+fingerprint of the constants (`grotto:observations`), so the score can eventually
+come from real predictions. The backtest stays the way to test a change.
+
 Over the first 85 recorded days (7 Aug – 30 Oct 2026, 44 mostly shut), where the
 better constant, always answering "shut", is right 52% of the time:
 
@@ -165,7 +170,10 @@ days, across both samples, the cave shut on 3 of 7 days in the window against 7 
 49 outside it. On calm days water above the day's mean at 09:00 went with being shut
 at 09:00 on 9 of 20 days, against 4 of 28 below it. Reopenings land on falling water
 9 times in 11. Hourly water level as a model input adds nothing, though, so this
-looks like the morning call rather than clearance under the arch hour by hour. Hence
+looks like the morning call rather than clearance under the arch hour by hour.
+Coupled one for one, its 41 cm swing would flip the cave twice a day in fair weather
+(`tide.test.ts`), and Open-Meteo's `sea_level_height_msl` sits about 44 cm below its
+stated datum here, so only the anomaly against a local mean is usable. Hence
 a lean sized to stop a calm day just under the warning line, at about 29%. Half as
 big again (weight 0.6) it scored 12 of 18 on the independent sample. The size is the
 one constant here chosen with the October days in view.
@@ -249,9 +257,9 @@ Edit one file; logic is untouched.
 src/
   app/
     api/forecast/route.ts        # aggregates all sources → numeric report (cached 1h)
-    api/grotto/route.ts          # cross-checked live grotto status (cached 30m)
-    api/grotto-history/route.ts  # today's bar + 7-day history (cached 15m)
-    api/poll-grotto/route.ts     # recorder: logs one live reading (optional)
+    api/grotto/route.ts          # latest recorded grotto status (cached 1m)
+    api/grotto-history/route.ts  # today's bar + 7-day history (cached 5m)
+    api/poll-grotto/route.ts     # recorder: logs one reading and the forecast beside it (optional)
     page.tsx, layout.tsx, globals.css   # design tokens live in globals.css
   config/                   # ← all copy + tuning (the "change me" layer)
   lib/
@@ -310,6 +318,9 @@ history builds up from the day you switch it on.
    1,000/day free tier, and ~1.4 MB of store per year. QStash strips the
    `Upstash-Forward-` prefix, so the endpoint receives a plain `Authorization`
    header.
+
+   If no definite reading has landed by 11:00 Capri time, the poll answers 500, so
+   QStash retries and reports it instead of logging "unknown" in silence.
 
    The cadence is set by how precisely you want *transitions* placed, not by how
    much data you want. Same-status readings collapse into one segment, so a
