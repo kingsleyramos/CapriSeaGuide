@@ -15,7 +15,7 @@ import { ACTIVITY_DOUBT, HEAD_WEIGHTS, VERDICT_BANDS, type VerdictTone } from ".
 
 export type ConfidenceTone = "high" | "medium" | "low";
 export type GrottoStatus = "open" | "closed" | "unknown";
-/** Live grotto chip states: capri.net's verdict plus an "outside opening hours" state. */
+/** Live grotto chip states: the boatmen's call plus an "outside opening hours" state. */
 export type GrottoDisplayTone = "open" | "closed" | "offHours" | "unknown";
 export type SlotTrend = "worse" | "better" | null;
 export type PatternBand = "fallingFast" | "easing" | "building" | "steady";

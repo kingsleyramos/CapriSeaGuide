@@ -1,7 +1,7 @@
 /**
  * Live Blue Grotto status, resolved for display.
  *
- * capri.net gives a *daily weather verdict* (open / closed / unknown), not a
+ * The boatmen give a *daily verdict* (open / closed / unknown), not a
  * real-time signal. So we combine it with the Capri-local clock: outside
  * opening hours the grotto is simply closed for the day (not a weather
  * closure), and inside hours the verdict applies. When the verdict is
@@ -27,7 +27,7 @@ export function buildGrottoView({
   timezone = LOCATION.timezone,
   forecastGrottoProb,
 }: {
-  /** capri.net's daily weather verdict. */
+  /** The boatmen's daily verdict. */
   verdict: GrottoStatus;
   conflict: boolean;
   now: Date;
